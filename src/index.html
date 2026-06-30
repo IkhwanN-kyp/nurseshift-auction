@@ -240,10 +240,10 @@
 <div class="auth-wrap">
 <div class="auth-card">
   <div class="logo">🏥</div>
-  <h1>Lelang Cuti Perawat</h1>
-  <p>Masuk dengan akun Anda</p>
-  <label>No. HP</label>
-  <input type="tel" id="login-hp" placeholder="08xxxxxxxxxx" inputmode="tel">
+  <h1>Lelang Cuti Perawat 7A</h1>
+  <p>Masuk dengan Nama Perawat</p>
+  <label>Nama Perawat</label>
+  <input type="text" id="login-nama" placeholder="Masukkan nama Anda">
   <label>Password</label>
   <input type="password" id="login-pw" placeholder="Password">
   <button class="btn btn-primary" onclick="doLogin()">Masuk</button>
@@ -361,6 +361,14 @@
     <div class="card" id="tier-kartu">
       <div class="card-title">Tier Saya</div>
       <div id="tier-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Update Profil</div>
+      <label>Nomor HP</label>
+      <input type="tel" id="p-edit-hp">
+      <label>Email</label>
+      <input type="email" id="p-edit-email">
+      <button class="btn btn-primary" onclick="updateProfil()">Simpan Perubahan</button>
     </div>
     <button class="btn btn-danger" onclick="doLogout()" style="margin-top:8px">Keluar</button>
   </div>
@@ -551,14 +559,16 @@ function hashPw(pw) {
 
 // ── AUTH ──
 async function doLogin() {
-  const hp = document.getElementById('login-hp').value.trim();
+  // Ubah dari login-hp ke login-nama
+  const nama = document.getElementById('login-nama').value.trim(); 
   const pw = document.getElementById('login-pw').value;
-  if (!hp || !pw) { toast('Isi semua field', 'error'); return; }
+  if (!nama || !pw) { toast('Isi semua field', 'error'); return; }
 
+  // Query mencari berdasarkan 'nama'
   const { data, error } = await db.from('perawat')
-    .select('*').eq('no_hp', hp).eq('is_aktif', true).single();
+    .select('*').eq('nama', nama).eq('is_aktif', true).single();
 
-  if (error || !data) { toast('No HP tidak ditemukan', 'error'); return; }
+  if (error || !data) { toast('Nama tidak ditemukan', 'error'); return; }
   if (data.password_hash !== hashPw(pw)) { toast('Password salah', 'error'); return; }
 
   currentPerawat = data;
@@ -606,6 +616,19 @@ async function doLogout() {
   currentPerawat = null;
   currentUser = null;
   showScreen('screen-login');
+}
+
+// Update Profil
+async function updateProfil() {
+  const hp = document.getElementById('p-edit-hp').value;
+  const email = document.getElementById('p-edit-email').value;
+  
+  const { error } = await db.from('perawat')
+    .update({ no_hp: hp, email: email })
+    .eq('id', currentPerawat.id);
+
+  if (error) { toast('Gagal update', 'error'); }
+  else { toast('Profil diperbarui', 'success'); }
 }
 
 // ── INIT ──
