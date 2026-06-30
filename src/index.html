@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lelang Cuti Perawat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --primary: #0ea5e9;
+    --primary-dark: #0284c7;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-400: #94a3b8;
+    --gray-600: #475569;
+    --gray-800: #1e293b;
+    --tier1: #f59e0b;
+    --tier2: #3b82f6;
+    --tier3: #94a3b8;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50); color: var(--gray-800); min-height: 100vh; }
+
+  /* ── SCREEN ROUTER ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── AUTH SCREENS ── */
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; padding: 24px; }
+  .auth-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 32px 28px; width: 100%; max-width: 400px; }
+  .auth-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; color: var(--gray-800); }
+  .auth-card p { color: var(--gray-600); font-size: 14px; margin-bottom: 24px; }
+  .logo { font-size: 32px; margin-bottom: 12px; }
+
+  /* ── FORM ELEMENTS ── */
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600);
+    margin-bottom: 6px; margin-top: 16px; }
+  input, select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200);
+    border-radius: 8px; font-size: 15px; outline: none; transition: border .2s;
+    background: #fff; color: var(--gray-800); }
+  input:focus, select:focus { border-color: var(--primary); }
+  input::placeholder { color: var(--gray-400); }
+
+  /* ── BUTTONS ── */
+  .btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all .15s;
+    text-align: center; }
+  .btn-primary { background: var(--primary); color: #fff; margin-top: 20px; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { width: auto; padding: 7px 14px; font-size: 13px; border-radius: 7px; display: inline-block; }
+  .btn-ghost { background: var(--gray-100); color: var(--gray-800); }
+  .btn-ghost:hover { background: var(--gray-200); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── LINK ── */
+  .link { color: var(--primary); text-decoration: none; font-size: 13px;
+    display: block; text-align: center; margin-top: 16px; cursor: pointer; }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--gray-800); color: #fff; padding: 12px 20px; border-radius: 8px;
+    font-size: 14px; transition: transform .3s; z-index: 9999; white-space: nowrap;
+    max-width: 90vw; white-space: normal; text-align: center; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { background: var(--success); }
+  #toast.error { background: var(--danger); }
+  #toast.warning { background: var(--warning); color: #fff; }
+
+  /* ── MAIN APP LAYOUT ── */
+  .app-header { background: #fff; border-bottom: 1.5px solid var(--gray-200);
+    padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; }
+  .app-header h2 { font-size: 16px; font-weight: 700; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .notif-btn { position: relative; background: none; border: none; cursor: pointer;
+    font-size: 22px; padding: 4px; }
+  .notif-badge { position: absolute; top: 0; right: 0; background: var(--danger);
+    color: #fff; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    display: none; }
+  .notif-badge.show { display: flex; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--primary);
+    color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; flex-shrink: 0; }
+
+  .app-content { padding: 20px; max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
+
+  /* ── NAV TABS ── */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+    border-top: 1.5px solid var(--gray-200); display: flex; z-index: 100; }
+  .nav-item { flex: 1; padding: 10px 4px; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; border: none; background: none; cursor: pointer;
+    color: var(--gray-400); font-size: 11px; font-weight: 600; transition: color .15s; }
+  .nav-item.active { color: var(--primary); }
+  .nav-item span { font-size: 22px; line-height: 1; }
+
+  /* ── TIER BADGE ── */
+  .tier-badge { display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; }
+  .tier-1 { background: #fef3c7; color: #92400e; }
+  .tier-2 { background: #dbeafe; color: #1e40af; }
+  .tier-3 { background: var(--gray-100); color: var(--gray-600); }
+
+  /* ── STATUS BADGE ── */
+  .status-aktif { background: #dcfce7; color: #166534; }
+  .status-dibatalkan { background: #fee2e2; color: #991b1b; }
+
+  /* ── CALENDAR ── */
+  .cal-header { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; }
+  .cal-header h3 { font-size: 16px; font-weight: 700; }
+  .cal-nav { background: var(--gray-100); border: none; border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; font-size: 16px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day-label { text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--gray-400); padding: 4px 0; }
+  .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s; position: relative; border: 2px solid transparent;
+    gap: 1px; }
+  .cal-day.empty { cursor: default; }
+  .cal-day.available { background: #f0fdf4; color: #166534; }
+  .cal-day.available:hover { background: #dcfce7; border-color: var(--success); }
+  .cal-day.last-slot { background: #fefce8; color: #854d0e; }
+  .cal-day.full { background: var(--gray-100); color: var(--gray-400); cursor: not-allowed; }
+  .cal-day.blocked { background: #fee2e2; color: #991b1b; cursor: not-allowed; }
+  .cal-day.selected { background: var(--primary) !important; color: #fff !important;
+    border-color: var(--primary-dark) !important; }
+  .cal-day.my-cuti { background: #e0f2fe; color: #0369a1; border-color: var(--primary); }
+  .cal-day.past { opacity: .4; cursor: not-allowed; }
+  .slot-dot { font-size: 9px; font-weight: 500; }
+
+  /* ── CARDS ── */
+  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 18px; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--gray-600);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+
+  /* ── INFO ROW ── */
+  .info-row { display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { font-size: 13px; color: var(--gray-600); }
+  .info-value { font-size: 14px; font-weight: 600; }
+
+  /* ── SECTION TITLE ── */
+  .section-title { font-size: 16px; font-weight: 700; margin: 20px 0 12px; }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px;
+    color: var(--gray-600); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+
+  /* ── WINDOW INFO ── */
+  .window-info { border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
+    font-size: 13px; line-height: 1.6; }
+  .window-ok { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #166534; }
+  .window-wait { background: #fefce8; border: 1.5px solid #fde68a; color: #854d0e; }
+  .window-closed { background: #fee2e2; border: 1.5px solid #fecaca; color: #991b1b; }
+
+  /* ── NOTIF LIST ── */
+  .notif-item { padding: 12px 14px; border-radius: 8px; margin-bottom: 8px;
+    background: var(--gray-50); border-left: 3px solid var(--gray-200); }
+  .notif-item.unread { background: #eff6ff; border-color: var(--primary); }
+  .notif-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .notif-msg { font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+  .notif-time { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+
+  /* ── ADMIN TABS ── */
+  .admin-tabs { display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto;
+    padding-bottom: 4px; }
+  .admin-tab { padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--gray-200);
+    background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    transition: all .15s; }
+  .admin-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* ── TABLE ── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--gray-100); padding: 10px 12px; text-align: left;
+    font-weight: 700; color: var(--gray-600); font-size: 12px; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
+  .tbl-wrap { overflow-x: auto; border-radius: 8px; border: 1.5px solid var(--gray-200); }
+
+  /* ── MODAL ── */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+    display: flex; align-items: flex-end; justify-content: center; display: none; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 16px 16px 0 0; padding: 24px 20px;
+    width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal-close { float: right; background: none; border: none; font-size: 22px;
+    cursor: pointer; color: var(--gray-400); line-height: 1; }
+
+  /* ── PROFILE LOGOUT ── */
+  .profile-menu { position: absolute; right: 20px; top: 60px; background: #fff;
+    border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 8px; z-index: 150; display: none; min-width: 160px; }
+  .profile-menu.open { display: block; }
+  .profile-menu-item { padding: 10px 14px; border-radius: 8px; cursor: pointer;
+    font-size: 14px; transition: background .15s; }
+  .profile-menu-item:hover { background: var(--gray-100); }
+
+  /* ── MONTH SELECTOR ── */
+  .month-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+    margin-bottom: 16px; }
+  .month-pill { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    border: 1.5px solid var(--gray-200); background: #fff; cursor: pointer;
+    white-space: nowrap; transition: all .15s; flex-shrink: 0; }
+  .month-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* ── LOADING ── */
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid var(--gray-200);
+    border-top-color: var(--primary); border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-center { display: flex; justify-content: center; padding: 40px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-400); }
+  .empty-state p { font-size: 14px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ SCREENS ══════════ -->
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+<div class="auth-wrap">
+<div class="auth-card">
+  <div class="logo">🏥</div>
+  <h1>Lelang Cuti Perawat</h1>
+  <p>Masuk dengan akun Anda</p>
+  <label>No. HP</label>
+  <input type="tel" id="login-hp" placeholder="08xxxxxxxxxx" inputmode="tel">
+  <label>Password</label>
+  <input type="password" id="login-pw" placeholder="Password">
+  <button class="btn btn-primary" onclick="doLogin()">Masuk</button>
+  <a class="link" onclick="showScreen('screen-register')">Belum punya akun? Daftar dengan kode undangan</a>
+</div>
+</div>
+</div>
+
+<!-- REGISTER -->
+<div id="screen-register" class="screen">
+<div class="auth-wrap">
+<div class="auth-card">
+  <div class="logo">📋</div>
+  <h1>Daftar Akun</h1>
+  <p>Masukkan kode undangan dari admin</p>
+  <label>Kode Undangan</label>
+  <input type="text" id="reg-kode" placeholder="Contoh: RS2025ABC" style="text-transform:uppercase">
+  <label>Nama Lengkap</label>
+  <input type="text" id="reg-nama" placeholder="Nama sesuai data RS">
+  <label>No. HP (untuk login)</label>
+  <input type="tel" id="reg-hp" placeholder="08xxxxxxxxxx" inputmode="tel">
+  <label>Password</label>
+  <input type="password" id="reg-pw" placeholder="Min 6 karakter">
+  <label>Ulangi Password</label>
+  <input type="password" id="reg-pw2" placeholder="Ulangi password">
+  <button class="btn btn-primary" onclick="doRegister()">Daftar</button>
+  <a class="link" onclick="showScreen('screen-login')">Sudah punya akun? Masuk</a>
+</div>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="screen-app" class="screen">
+<div class="app-header">
+  <h2 id="header-title">🏥 Cuti Perawat</h2>
+  <div class="header-right">
+    <button class="notif-btn" onclick="showTab('notif')" aria-label="Notifikasi">
+      🔔<span class="notif-badge" id="notif-badge"></span>
+    </button>
+    <div class="avatar" id="user-avatar" onclick="toggleProfileMenu()"></div>
+  </div>
+</div>
+
+<div class="profile-menu" id="profile-menu">
+  <div class="profile-menu-item" onclick="showTab('profile')">👤 Profil Saya</div>
+  <div class="profile-menu-item" id="admin-menu-item" style="display:none" onclick="showTab('admin')">⚙️ Panel Admin</div>
+  <div class="profile-menu-item" onclick="doLogout()" style="color:var(--danger)">🚪 Keluar</div>
+</div>
+
+<div class="app-content">
+
+  <!-- TAB: KALENDER -->
+  <div id="tab-kalender" class="tab-content">
+    <div class="month-pills" id="month-pills"></div>
+    <div id="window-info-bar"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#f0fdf4;border:1.5px solid #bbf7d0"></div>Ada slot</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fefce8;border:1.5px solid #fde68a"></div>Sisa 1</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gray-100)"></div>Penuh</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fee2e2"></div>Diblokir</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e0f2fe;border:1.5px solid var(--primary)"></div>Cuti saya</div>
+    </div>
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calPrev()">◀</button>
+      <h3 id="cal-month-label"></h3>
+      <button class="cal-nav" onclick="calNext()">▶</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div id="selected-info" style="margin-top:18px;display:none">
+      <div class="card">
+        <div class="card-title">Pengajuan Cuti</div>
+        <div class="info-row">
+          <span class="info-label">Tanggal mulai</span>
+          <span class="info-value" id="sel-mulai">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Tanggal selesai</span>
+          <span class="info-value" id="sel-selesai">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Jumlah hari</span>
+          <span class="info-value" id="sel-hari">—</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Batal</button>
+          <button class="btn btn-primary btn-sm" onclick="submitCuti()" style="flex:1">Ajukan Cuti</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: STATUS -->
+  <div id="tab-status" class="tab-content" style="display:none">
+    <div class="section-title">Riwayat Cuti Saya</div>
+    <div id="status-list"></div>
+  </div>
+
+  <!-- TAB: NOTIF -->
+  <div id="tab-notif" class="tab-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="section-title" style="margin:0">Notifikasi</div>
+      <button class="btn btn-ghost btn-sm" onclick="bacaSemua()">Tandai semua dibaca</button>
+    </div>
+    <div id="notif-list"></div>
+  </div>
+
+  <!-- TAB: PROFIL -->
+  <div id="tab-profile" class="tab-content" style="display:none">
+    <div class="card" style="margin-top:8px">
+      <div class="card-title">Profil Saya</div>
+      <div class="info-row"><span class="info-label">Nama</span><span class="info-value" id="p-nama"></span></div>
+      <div class="info-row"><span class="info-label">No. HP</span><span class="info-value" id="p-hp"></span></div>
+      <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="p-admin"></span></div>
+    </div>
+    <div class="card" id="tier-kartu">
+      <div class="card-title">Tier Saya</div>
+      <div id="tier-list"></div>
+    </div>
+    <button class="btn btn-danger" onclick="doLogout()" style="margin-top:8px">Keluar</button>
+  </div>
+
+  <!-- TAB: ADMIN -->
+  <div id="tab-admin" class="tab-content" style="display:none">
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchAdminTab('periode')">📅 Periode</button>
+      <button class="admin-tab" onclick="switchAdminTab('tier')">🏅 Tier</button>
+      <button class="admin-tab" onclick="switchAdminTab('blokir')">🚫 Blokir</button>
+      <button class="admin-tab" onclick="switchAdminTab('perawat')">👥 Perawat</button>
+      <button class="admin-tab" onclick="switchAdminTab('kode')">🎟 Kode</button>
+      <button class="admin-tab" onclick="switchAdminTab('rekap')">📊 Rekap</button>
+    </div>
+
+    <!-- Admin: Periode -->
+    <div id="admin-tab-periode">
+      <div class="card">
+        <div class="card-title">Buka Periode Pengajuan</div>
+        <label>Bulan</label>
+        <select id="a-bulan"></select>
+        <label>Tanggal mulai pengajuan</label>
+        <input type="date" id="a-buka">
+        <label>Tenggat Tier 1 (otomatis +3 hari)</label>
+        <input type="date" id="a-tenggat1" readonly style="background:var(--gray-50)">
+        <label>Tenggat Tier 2 (hari setelah tenggat T1)</label>
+        <input type="date" id="a-tenggat2" readonly style="background:var(--gray-50)">
+        <label>Batas Tier 3 (hari setelah tenggat T2)</label>
+        <input type="date" id="a-tenggat3" readonly style="background:var(--gray-50)">
+        <button class="btn btn-primary" onclick="simpanPeriode()">Simpan Periode</button>
+      </div>
+      <div id="periode-list"></div>
+    </div>
+
+    <!-- Admin: Tier -->
+    <div id="admin-tab-tier" style="display:none">
+      <div class="card">
+        <div class="card-title">Atur Tier Perawat</div>
+        <label>Bulan</label>
+        <select id="a-tier-bulan"></select>
+        <label>Perawat</label>
+        <select id="a-tier-perawat"></select>
+        <label>Tier</label>
+        <select id="a-tier-nilai">
+          <option value="1">Tier 1 — Utama</option>
+          <option value="2">Tier 2 — Tambahan</option>
+          <option value="3">Tier 3 — Default</option>
+        </select>
+        <button class="btn btn-primary" onclick="simpanTier()">Simpan Tier</button>
+      </div>
+      <div id="tier-admin-list" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Admin: Blokir -->
+    <div id="admin-tab-blokir" style="display:none">
+      <div class="card">
+        <div class="card-title">Blokir Tanggal</div>
+        <label>Tanggal</label>
+        <input type="date" id="a-blokir-tgl">
+        <label>Alasan</label>
+        <input type="text" id="a-blokir-alasan" placeholder="Misal: Akreditasi RS">
+        <button class="btn btn-primary" onclick="simpanBlokir()">Blokir Tanggal</button>
+      </div>
+      <div id="blokir-list" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Admin: Perawat -->
+    <div id="admin-tab-perawat" style="display:none">
+      <div id="perawat-list"></div>
+    </div>
+
+    <!-- Admin: Kode Undangan -->
+    <div id="admin-tab-kode" style="display:none">
+      <div class="card">
+        <div class="card-title">Generate Kode Undangan</div>
+        <label>Jumlah kode</label>
+        <input type="number" id="a-jml-kode" value="5" min="1" max="50">
+        <button class="btn btn-primary" onclick="genKode()">Generate Kode</button>
+      </div>
+      <div id="kode-list" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Admin: Rekap -->
+    <div id="admin-tab-rekap" style="display:none">
+      <div class="card">
+        <div class="card-title">Export Rekap Cuti</div>
+        <label>Bulan</label>
+        <select id="a-rekap-bulan"></select>
+        <button class="btn btn-primary" onclick="exportExcel()">⬇ Download Excel</button>
+      </div>
+      <div id="rekap-preview"></div>
+    </div>
+
+  </div><!-- /tab-admin -->
+
+</div><!-- /app-content -->
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-kalender" onclick="showTab('kalender')">
+    <span>📅</span>Kalender
+  </button>
+  <button class="nav-item" id="nav-status" onclick="showTab('status')">
+    <span>📋</span>Status
+  </button>
+  <button class="nav-item" id="nav-notif" onclick="showTab('notif')">
+    <span>🔔</span>Notifikasi
+  </button>
+  <button class="nav-item" id="nav-profile" onclick="showTab('profile')">
+    <span>👤</span>Profil
+  </button>
+</nav>
+
+</div><!-- /screen-app -->
+
+<!-- ══════════ SCRIPTS ══════════ -->
+<script>
+// ── CONFIG: ganti dengan URL & KEY Supabase Anda ──
+const SUPA_URL = 'https://tzkkxfgowrcglbhakmmh.supabase.co';
+const SUPA_KEY = 'sb_publishable_UF-KcPKv0C9quewrbCmwQA_s9_pR6S6';
+
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+// ── STATE ──
+let currentUser = null;
+let currentPerawat = null;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedStart = null;
+let selectedEnd = null;
+let slotCache = {};
+let blokirSet = new Set();
+let myCutiRanges = [];
+let availableMonths = [];
+let activeCalMonth = null; // date string 'YYYY-MM-01'
+
+// ── UTILS ──
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = type ? `show ${type}` : 'show';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3200);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function fmtDateShort(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+function toDateStr(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function monthLabel(y, m) {
+  return new Date(y, m, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+}
+
+function tierBadge(t) {
+  return `<span class="tier-badge tier-${t}">Tier ${t}</span>`;
+}
+
+function hashPw(pw) {
+  // Simple hash — untuk produksi gunakan bcrypt di backend
+  let h = 0;
+  for (let i = 0; i < pw.length; i++) { h = Math.imul(31, h) + pw.charCodeAt(i) | 0; }
+  return 'h_' + Math.abs(h).toString(36) + pw.length;
+}
+
+// ── AUTH ──
+async function doLogin() {
+  const hp = document.getElementById('login-hp').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  if (!hp || !pw) { toast('Isi semua field', 'error'); return; }
+
+  const { data, error } = await db.from('perawat')
+    .select('*').eq('no_hp', hp).eq('is_aktif', true).single();
+
+  if (error || !data) { toast('No HP tidak ditemukan', 'error'); return; }
+  if (data.password_hash !== hashPw(pw)) { toast('Password salah', 'error'); return; }
+
+  currentPerawat = data;
+  localStorage.setItem('perawat_id', data.id);
+  initApp();
+}
+
+async function doRegister() {
+  const kode = document.getElementById('reg-kode').value.trim().toUpperCase();
+  const nama = document.getElementById('reg-nama').value.trim();
+  const hp   = document.getElementById('reg-hp').value.trim();
+  const pw   = document.getElementById('reg-pw').value;
+  const pw2  = document.getElementById('reg-pw2').value;
+
+  if (!kode || !nama || !hp || !pw) { toast('Isi semua field', 'error'); return; }
+  if (pw !== pw2) { toast('Password tidak sama', 'error'); return; }
+  if (pw.length < 6) { toast('Password min 6 karakter', 'error'); return; }
+
+  // Cek kode undangan
+  const { data: kd } = await db.from('kode_undangan')
+    .select('*').eq('kode', kode).eq('is_terpakai', false).single();
+  if (!kd) { toast('Kode undangan tidak valid atau sudah dipakai', 'error'); return; }
+
+  // Cek HP sudah ada
+  const { data: existing } = await db.from('perawat').select('id').eq('no_hp', hp).single();
+  if (existing) { toast('No HP sudah terdaftar', 'error'); return; }
+
+  // Simpan perawat
+  const { data: newP, error } = await db.from('perawat').insert({
+    nama, no_hp: hp, password_hash: hashPw(pw), kode_undangan: kode
+  }).select().single();
+
+  if (error) { toast('Gagal mendaftar: ' + error.message, 'error'); return; }
+
+  // Tandai kode terpakai
+  await db.from('kode_undangan').update({ is_terpakai: true, dipakai_oleh: newP.id })
+    .eq('id', kd.id);
+
+  toast('Registrasi berhasil! Silakan login', 'success');
+  showScreen('screen-login');
+}
+
+async function doLogout() {
+  localStorage.removeItem('perawat_id');
+  currentPerawat = null;
+  currentUser = null;
+  showScreen('screen-login');
+}
+
+// ── INIT ──
+async function initApp() {
+  showScreen('screen-app');
+  document.getElementById('user-avatar').textContent =
+    currentPerawat.nama.charAt(0).toUpperCase();
+  if (currentPerawat.is_admin) {
+    document.getElementById('admin-menu-item').style.display = 'block';
+  }
+  buildMonthPills();
+  showTab('kalender');
+  loadNotifBadge();
+}
+
+function buildMonthPills() {
+  const now = new Date();
+  const months = [];
+  // Tampilkan bulan sekarang +1 sampai +6
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    months.push({ y: d.getFullYear(), m: d.getMonth() });
+  }
+  availableMonths = months;
+
+  const pills = document.getElementById('month-pills');
+  pills.innerHTML = '';
+  months.forEach((mo, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'month-pill' + (idx === 0 ? ' active' : '');
+    btn.textContent = new Date(mo.y, mo.m, 1).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+    btn.onclick = () => {
+      document.querySelectorAll('.month-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calYear = mo.y; calMonth = mo.m;
+      activeCalMonth = toDateStr(mo.y, mo.m, 1);
+      clearSelection();
+      renderCal();
+      loadWindowInfo();
+    };
+    pills.appendChild(btn);
+  });
+
+  // Set default bulan pertama
+  if (months.length > 0) {
+    calYear = months[0].y; calMonth = months[0].m;
+    activeCalMonth = toDateStr(months[0].y, months[0].m, 1);
+  }
+
+  // Build bulan dropdowns admin
+  buildAdminMonthDropdowns(months);
+}
+
+function buildAdminMonthDropdowns(months) {
+  const selects = ['a-bulan','a-tier-bulan','a-rekap-bulan'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    months.forEach(mo => {
+      const opt = document.createElement('option');
+      opt.value = toDateStr(mo.y, mo.m, 1);
+      opt.textContent = new Date(mo.y, mo.m, 1).toLocaleDateString('id-ID',
+        { month: 'long', year: 'numeric' });
+      el.appendChild(opt);
+    });
+  });
+
+  // Tanggal buka listener
+  const bukaInput = document.getElementById('a-buka');
+  if (bukaInput) {
+    bukaInput.addEventListener('input', e => {
+      const v = e.target.value;
+      if (!v) return;
+      document.getElementById('a-tenggat1').value = addDays(v, 3);
+      document.getElementById('a-tenggat2').value = addDays(v, 4);
+      document.getElementById('a-tenggat3').value = addDays(v, 5);
+    });
+  }
+}
+
+// ── TAB NAVIGATION ──
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('profile-menu').classList.remove('open');
+
+  const tabMap = { kalender:'tab-kalender', status:'tab-status',
+    notif:'tab-notif', profile:'tab-profile', admin:'tab-admin' };
+  const navMap = { kalender:'nav-kalender', status:'nav-status',
+    notif:'nav-notif', profile:'nav-profile', admin:null };
+
+  document.getElementById(tabMap[name]).style.display = 'block';
+  if (navMap[name]) document.getElementById(navMap[name]).classList.add('active');
+
+  if (name === 'kalender') { renderCal(); loadWindowInfo(); }
+  if (name === 'status') loadStatus();
+  if (name === 'notif') loadNotif();
+  if (name === 'profile') loadProfile();
+  if (name === 'admin') loadAdmin();
+}
+
+function toggleProfileMenu() {
+  document.getElementById('profile-menu').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  const menu = document.getElementById('profile-menu');
+  const avatar = document.getElementById('user-avatar');
+  if (!menu.contains(e.target) && e.target !== avatar) {
+    menu.classList.remove('open');
+  }
+});
+
+// ── KALENDER ──
+async function loadSlotData() {
+  const y = calYear, m = calMonth;
+  const firstDay = toDateStr(y, m, 1);
+  const lastDay = toDateStr(y, m, new Date(y, m+1, 0).getDate());
+  slotCache = {};
+  blokirSet = new Set();
+  myCutiRanges = [];
+
+  // Load slot data
+  const { data: cutiData } = await db.from('pengajuan_cuti')
+    .select('tanggal_mulai, tanggal_selesai, perawat_id')
+    .eq('status', 'aktif')
+    .lte('tanggal_mulai', lastDay).gte('tanggal_selesai', firstDay);
+
+  // Load blokir
+  const { data: blokirData } = await db.from('tanggal_blokir')
+    .select('tanggal, alasan').gte('tanggal', firstDay).lte('tanggal', lastDay);
+  if (blokirData) blokirData.forEach(b => blokirSet.add(b.tanggal));
+
+  // Load pengaturan slot
+  const { data: setting } = await db.from('pengaturan_periode')
+    .select('slot_normal').eq('bulan', firstDay).single();
+  const slotMax = setting?.slot_normal || 2;
+
+  // Hitung per tanggal
+  const days = new Date(y, m+1, 0).getDate();
+  for (let d = 1; d <= days; d++) {
+    const ds = toDateStr(y, m, d);
+    let count = 0;
+    if (cutiData) {
+      cutiData.forEach(c => {
+        if (ds >= c.tanggal_mulai && ds <= c.tanggal_selesai) count++;
+      });
+    }
+    slotCache[ds] = { terpakai: count, max: slotMax, sisa: Math.max(0, slotMax - count) };
+  }
+
+  // Cuti saya
+  if (cutiData && currentPerawat) {
+    cutiData.filter(c => c.perawat_id === currentPerawat.id).forEach(c => {
+      myCutiRanges.push({ mulai: c.tanggal_mulai, selesai: c.tanggal_selesai });
+    });
+  }
+}
+
+async function renderCal() {
+  const grid = document.getElementById('cal-grid');
+  document.getElementById('cal-month-label').textContent = monthLabel(calYear, calMonth);
+  grid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  document.getElementById('cal-grid').style.display = 'block';
+
+  await loadSlotData();
+
+  const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  let html = days.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  for (let i = 0; i < firstDow; i++) html += '<div class="cal-day empty"></div>';
+
+  const today = new Date().toISOString().slice(0, 10);
+  const totalDays = new Date(calYear, calMonth+1, 0).getDate();
+
+  for (let d = 1; d <= totalDays; d++) {
+    const ds = toDateStr(calYear, calMonth, d);
+    const isPast = ds < today;
+    const isBlokir = blokirSet.has(ds);
+    const slot = slotCache[ds] || { sisa: 0, max: 2 };
+    const isMyCuti = myCutiRanges.some(r => ds >= r.mulai && ds <= r.selesai);
+    const isSelected = selectedStart && selectedEnd &&
+      ds >= selectedStart && ds <= selectedEnd;
+
+    let cls = 'cal-day';
+    let slotLabel = '';
+
+    if (isPast) { cls += ' past'; }
+    else if (isBlokir) { cls += ' blocked'; slotLabel = '🚫'; }
+    else if (isMyCuti) { cls += ' my-cuti'; slotLabel = '✓'; }
+    else if (slot.sisa === 0) { cls += ' full'; slotLabel = 'penuh'; }
+    else if (slot.sisa === 1) { cls += ' last-slot'; slotLabel = '1 sisa'; }
+    else { cls += ' available'; slotLabel = `${slot.sisa} slot`; }
+
+    if (isSelected) cls += ' selected';
+
+    const clickable = !isPast && !isBlokir && !isMyCuti && slot.sisa > 0;
+    html += `<div class="${cls}" ${clickable ? `onclick="pickDay('${ds}')"` : ''}
+      data-date="${ds}">
+      <span>${d}</span>
+      <span class="slot-dot">${slotLabel}</span>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function calPrev() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  clearSelection(); renderCal(); loadWindowInfo();
+}
+function calNext() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  clearSelection(); renderCal(); loadWindowInfo();
+}
+
+function pickDay(ds) {
+  if (!selectedStart) {
+    selectedStart = ds;
+    selectedEnd = ds;
+  } else {
+    // Validasi: harus berurutan, tidak lompat, max 6 hari
+    const s = new Date(selectedStart + 'T00:00:00');
+    const e = new Date(ds + 'T00:00:00');
+    if (e < s) { selectedStart = ds; selectedEnd = ds; }
+    else {
+      // Cek tidak ada blokir di antara range
+      let check = new Date(selectedStart + 'T00:00:00');
+      let valid = true;
+      while (check <= e) {
+        const cs = check.toISOString().slice(0, 10);
+        if (blokirSet.has(cs)) {
+          toast('Ada tanggal diblokir di range yang dipilih', 'error'); valid = false; break;
+        }
+        if (slotCache[cs] && slotCache[cs].sisa === 0) {
+          toast('Tanggal ' + fmtDateShort(cs) + ' sudah penuh', 'error'); valid = false; break;
+        }
+        check.setDate(check.getDate() + 1);
+      }
+      if (!valid) return;
+      const diff = Math.round((e - s) / 86400000) + 1;
+      if (diff > 6) { toast('Maksimal 6 hari cuti', 'error'); return; }
+      selectedEnd = ds;
+    }
+  }
+  updateSelectionUI();
+  renderCal();
+}
+
+function updateSelectionUI() {
+  const box = document.getElementById('selected-info');
+  if (!selectedStart) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const diff = Math.round(
+    (new Date(selectedEnd+'T00:00:00') - new Date(selectedStart+'T00:00:00')) / 86400000) + 1;
+  document.getElementById('sel-mulai').textContent = fmtDate(selectedStart);
+  document.getElementById('sel-selesai').textContent = fmtDate(selectedEnd);
+  document.getElementById('sel-hari').textContent = diff + ' hari';
+}
+
+function clearSelection() {
+  selectedStart = null; selectedEnd = null;
+  document.getElementById('selected-info').style.display = 'none';
+}
+
+async function submitCuti() {
+  if (!selectedStart || !selectedEnd) return;
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Memproses...';
+
+  const { data, error } = await db.rpc('ajukan_cuti', {
+    p_perawat_id: currentPerawat.id,
+    p_tanggal_mulai: selectedStart,
+    p_tanggal_selesai: selectedEnd
+  });
+
+  btn.disabled = false; btn.textContent = 'Ajukan Cuti';
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  if (!data.ok) { toast(data.pesan, 'error'); return; }
+
+  toast(data.pesan, 'success');
+  clearSelection();
+  await renderCal();
+  loadNotifBadge();
+}
+
+// ── WINDOW INFO ──
+async function loadWindowInfo() {
+  const bulanStr = toDateStr(calYear, calMonth, 1);
+  const { data } = await db.from('pengaturan_periode')
+    .select('*').eq('bulan', bulanStr).single();
+  const bar = document.getElementById('window-info-bar');
+
+  if (!data) {
+    bar.innerHTML = `<div class="window-info window-closed">Periode ${monthLabel(calYear,calMonth)} belum dibuka admin.</div>`;
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0,10);
+  const tierRow = await db.from('tier_bulanan').select('tier')
+    .eq('perawat_id', currentPerawat.id).eq('bulan', bulanStr).single();
+  const tier = tierRow.data?.tier || 3;
+
+  let msg = '', cls = 'window-ok';
+  if (today < data.buka_tanggal) {
+    msg = `Pengajuan dibuka ${fmtDate(data.buka_tanggal)}`; cls = 'window-wait';
+  } else if (tier === 1 && today <= data.tenggat_tier1) {
+    msg = `Anda Tier 1 — Tenggat: ${fmtDate(data.tenggat_tier1)}`;
+  } else if (tier === 1 && today > data.tenggat_tier1) {
+    msg = `Tenggat Tier 1 lewat — Anda masuk antrean Tier 2`; cls = 'window-wait';
+  } else if (tier === 2 && today <= data.tenggat_tier1) {
+    msg = `Anda Tier 2 — Menunggu Tier 1 selesai (${fmtDate(data.tenggat_tier1)})`; cls = 'window-wait';
+  } else if (tier === 2 && today > data.tenggat_tier1) {
+    msg = `Anda Tier 2 — Window aktif s/d ${fmtDate(data.tenggat_tier2)}`;
+  } else if (tier === 3 && today <= data.tenggat_tier2) {
+    msg = `Anda Tier 3 — Menunggu Tier 1&2 selesai (${fmtDate(data.tenggat_tier2)})`; cls = 'window-wait';
+  } else {
+    msg = `Anda Tier 3 — Window aktif`;
+  }
+
+  bar.innerHTML = `<div class="window-info ${cls}">${tierBadge(tier)} ${msg}</div>`;
+}
+
+// ── STATUS CUTI ──
+async function loadStatus() {
+  const el = document.getElementById('status-list');
+  el.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+
+  const { data } = await db.from('pengajuan_cuti')
+    .select('*').eq('perawat_id', currentPerawat.id)
+    .order('submitted_at', { ascending: false });
+
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state">📭<p>Belum ada riwayat cuti</p></div>'; return;
+  }
+
+  el.innerHTML = data.map(c => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-weight:700;font-size:15px">${fmtDate(c.tanggal_mulai)} — ${fmtDate(c.tanggal_selesai)}</div>
+          <div style="font-size:13px;color:var(--gray-600);margin-top:3px">${c.jumlah_hari} hari</div>
+        </div>
+        ${tierBadge(c.tier_saat_pengajuan)}
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="tier-badge ${c.status === 'aktif' ? 'status-aktif' : 'status-dibatalkan'}">
+          ${c.status === 'aktif' ? '✓ Aktif' : c.status === 'dibatalkan_sistem' ? '✗ Batal (sistem)' : '✗ Batal'}
+        </span>
+      </div>
+      ${c.dibatalkan_karena ? `<div style="font-size:12px;color:var(--danger);margin-top:6px">${c.dibatalkan_karena}</div>` : ''}
+      ${c.status === 'aktif' ? `<button class="btn btn-ghost btn-sm" style="margin-top:10px;color:var(--danger)" onclick="batalkanCuti('${c.id}')">Batalkan Cuti</button>` : ''}
+    </div>
+  `).join('');
+}
+
+async function batalkanCuti(id) {
+  if (!confirm('Yakin batalkan cuti ini?')) return;
+  const { data } = await db.rpc('batalkan_cuti', {
+    p_cuti_id: id, p_perawat_id: currentPerawat.id });
+  if (data?.ok) { toast('Cuti dibatalkan', 'success'); loadStatus(); }
+  else toast(data?.pesan || 'Gagal', 'error');
+}
+
+// ── NOTIFIKASI ──
+async function loadNotif() {
+  const el = document.getElementById('notif-list');
+  const { data } = await db.from('notifikasi').select('*')
+    .eq('perawat_id', currentPerawat.id).order('created_at', { ascending: false });
+
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state">🔔<p>Tidak ada notifikasi</p></div>'; return;
+  }
+
+  el.innerHTML = data.map(n => `
+    <div class="notif-item ${n.is_dibaca ? '' : 'unread'}">
+      <div class="notif-title">${n.judul}</div>
+      <div class="notif-msg">${n.pesan}</div>
+      <div class="notif-time">${new Date(n.created_at).toLocaleString('id-ID')}</div>
+    </div>
+  `).join('');
+
+  // Mark all as read
+  await db.from('notifikasi').update({ is_dibaca: true })
+    .eq('perawat_id', currentPerawat.id).eq('is_dibaca', false);
+  updateBadge(0);
+}
+
+async function loadNotifBadge() {
+  const { count } = await db.from('notifikasi').select('*', { count: 'exact', head: true })
+    .eq('perawat_id', currentPerawat.id).eq('is_dibaca', false);
+  updateBadge(count || 0);
+}
+
+function updateBadge(n) {
+  const badge = document.getElementById('notif-badge');
+  badge.textContent = n > 9 ? '9+' : n;
+  badge.classList.toggle('show', n > 0);
+}
+
+async function bacaSemua() {
+  await db.from('notifikasi').update({ is_dibaca: true })
+    .eq('perawat_id', currentPerawat.id);
+  loadNotif(); updateBadge(0);
+}
+
+// ── PROFIL ──
+async function loadProfile() {
+  document.getElementById('p-nama').textContent = currentPerawat.nama;
+  document.getElementById('p-hp').textContent = currentPerawat.no_hp;
+  document.getElementById('p-admin').textContent = currentPerawat.is_admin ? '🛡 Admin' : 'Perawat';
+
+  // Tier 6 bulan ke depan
+  const now = new Date();
+  const rows = [];
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const bulan = toDateStr(d.getFullYear(), d.getMonth(), 1);
+    const { data } = await db.from('tier_bulanan').select('tier')
+      .eq('perawat_id', currentPerawat.id).eq('bulan', bulan).single();
+    rows.push({ bulan, tier: data?.tier || 3,
+      label: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) });
+  }
+
+  document.getElementById('tier-list').innerHTML = rows.map(r => `
+    <div class="info-row">
+      <span class="info-label">${r.label}</span>
+      ${tierBadge(r.tier)}
+    </div>
+  `).join('');
+}
+
+// ── ADMIN ──
+let activeAdminTab = 'periode';
+
+async function loadAdmin() {
+  if (!currentPerawat.is_admin) { showTab('kalender'); return; }
+  switchAdminTab(activeAdminTab);
+}
+
+function switchAdminTab(name) {
+  activeAdminTab = name;
+  document.querySelectorAll('[id^="admin-tab-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('admin-tab-' + name).style.display = 'block';
+  document.querySelectorAll('.admin-tab').forEach((t, i) => {
+    const tabs = ['periode','tier','blokir','perawat','kode','rekap'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  if (name === 'perawat') loadPerawatAdmin();
+  if (name === 'kode') loadKodeAdmin();
+  if (name === 'blokir') loadBlokirAdmin();
+  if (name === 'tier') loadTierAdmin();
+  if (name === 'rekap') loadRekapPreview();
+  if (name === 'periode') loadPeriodeList();
+}
+
+async function simpanPeriode() {
+  const bulan = document.getElementById('a-bulan').value;
+  const buka  = document.getElementById('a-buka').value;
+  const t1    = document.getElementById('a-tenggat1').value;
+  const t2    = document.getElementById('a-tenggat2').value;
+  if (!bulan || !buka) { toast('Isi semua field', 'error'); return; }
+
+  const { error } = await db.from('pengaturan_periode').upsert({
+    bulan, buka_tanggal: buka, tenggat_tier1: t1, tenggat_tier2: t2,
+    tenggat_tier3: document.getElementById('a-tenggat3').value,
+    is_aktif: true
+  }, { onConflict: 'bulan' });
+
+  if (error) { toast('Gagal: ' + error.message, 'error'); return; }
+  toast('Periode disimpan', 'success');
+  loadPeriodeList();
+}
+
+async function loadPeriodeList() {
+  const { data } = await db.from('pengaturan_periode').select('*').order('bulan');
+  const el = document.getElementById('periode-list');
+  if (!data?.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <tr><th>Bulan</th><th>Buka</th><th>T1</th><th>T2</th></tr>
+    ${data.map(p => `<tr>
+      <td>${new Date(p.bulan).toLocaleDateString('id-ID',{month:'short',year:'numeric'})}</td>
+      <td>${fmtDateShort(p.buka_tanggal)}</td>
+      <td>${fmtDateShort(p.tenggat_tier1)}</td>
+      <td>${fmtDateShort(p.tenggat_tier2)}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+async function simpanTier() {
+  const bulan = document.getElementById('a-tier-bulan').value;
+  const pid   = document.getElementById('a-tier-perawat').value;
+  const tier  = parseInt(document.getElementById('a-tier-nilai').value);
+  if (!bulan || !pid) { toast('Pilih semua', 'error'); return; }
+
+  const { error } = await db.from('tier_bulanan').upsert(
+    { perawat_id: pid, bulan, tier }, { onConflict: 'perawat_id,bulan' });
+  if (error) { toast('Gagal: ' + error.message, 'error'); return; }
+  toast('Tier disimpan', 'success');
+  loadTierAdmin();
+}
+
+async function loadTierAdmin() {
+  // Load perawat untuk dropdown
+  const { data: perawatData } = await db.from('perawat').select('id,nama')
+    .eq('is_aktif', true).order('nama');
+  const sel = document.getElementById('a-tier-perawat');
+  sel.innerHTML = perawatData?.map(p => `<option value="${p.id}">${p.nama}</option>`).join('') || '';
+
+  // Load tier bulan aktif
+  const bulan = document.getElementById('a-tier-bulan').value;
+  if (!bulan) return;
+  const { data } = await db.from('tier_bulanan').select('*, perawat(nama)')
+    .eq('bulan', bulan).order('tier');
+  const el = document.getElementById('tier-admin-list');
+  if (!data?.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:13px;padding:8px">Belum ada tier diatur</p>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <tr><th>Perawat</th><th>Tier</th><th></th></tr>
+    ${data.map(t => `<tr>
+      <td>${t.perawat?.nama || '?'}</td>
+      <td>${tierBadge(t.tier)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="hapusTier('${t.id}')">✕</button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+async function hapusTier(id) {
+  await db.from('tier_bulanan').delete().eq('id', id);
+  loadTierAdmin();
+}
+
+async function simpanBlokir() {
+  const tgl    = document.getElementById('a-blokir-tgl').value;
+  const alasan = document.getElementById('a-blokir-alasan').value.trim();
+  if (!tgl || !alasan) { toast('Isi semua field', 'error'); return; }
+
+  const { error } = await db.from('tanggal_blokir').insert({
+    tanggal: tgl, alasan, dibuat_oleh: currentPerawat.id });
+  if (error) { toast('Gagal: ' + error.message, 'error'); return; }
+  toast('Tanggal diblokir', 'success');
+  loadBlokirAdmin();
+}
+
+async function loadBlokirAdmin() {
+  const { data } = await db.from('tanggal_blokir').select('*').order('tanggal');
+  const el = document.getElementById('blokir-list');
+  if (!data?.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <tr><th>Tanggal</th><th>Alasan</th><th></th></tr>
+    ${data.map(b => `<tr>
+      <td>${fmtDate(b.tanggal)}</td>
+      <td>${b.alasan}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="hapusBlokir('${b.id}')">Hapus</button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+async function hapusBlokir(id) {
+  await db.from('tanggal_blokir').delete().eq('id', id);
+  loadBlokirAdmin();
+}
+
+async function loadPerawatAdmin() {
+  const { data } = await db.from('perawat').select('*').order('nama');
+  const el = document.getElementById('perawat-list');
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <tr><th>Nama</th><th>HP</th><th>Status</th><th></th></tr>
+    ${(data||[]).map(p => `<tr>
+      <td>${p.nama}</td>
+      <td>${p.no_hp}</td>
+      <td>${p.is_aktif ? '✓ Aktif' : '✗ Non-aktif'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="toggleAktif('${p.id}',${p.is_aktif})">
+        ${p.is_aktif ? 'Non-aktif' : 'Aktifkan'}
+      </button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+async function toggleAktif(id, isAktif) {
+  await db.from('perawat').update({ is_aktif: !isAktif }).eq('id', id);
+  loadPerawatAdmin();
+}
+
+async function genKode() {
+  const n = parseInt(document.getElementById('a-jml-kode').value) || 5;
+  const kodes = [];
+  for (let i = 0; i < n; i++) {
+    const k = 'RS' + Math.random().toString(36).substr(2,6).toUpperCase();
+    kodes.push({ kode: k, dibuat_oleh: currentPerawat.id });
+  }
+  const { error } = await db.from('kode_undangan').insert(kodes);
+  if (error) { toast('Gagal: ' + error.message, 'error'); return; }
+  toast(`${n} kode berhasil dibuat`, 'success');
+  loadKodeAdmin();
+}
+
+async function loadKodeAdmin() {
+  const { data } = await db.from('kode_undangan')
+    .select('*, dipakai: perawat!kode_undangan_dipakai_oleh_fkey(nama)')
+    .order('created_at', { ascending: false });
+  const el = document.getElementById('kode-list');
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <tr><th>Kode</th><th>Status</th><th>Dipakai</th></tr>
+    ${(data||[]).map(k => `<tr>
+      <td style="font-family:monospace;font-weight:700">${k.kode}</td>
+      <td>${k.is_terpakai ? '<span style="color:var(--gray-400)">Terpakai</span>' : '<span style="color:var(--success)">Tersedia</span>'}</td>
+      <td>${k.dipakai?.nama || '—'}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+// ── REKAP EXCEL ──
+async function loadRekapPreview() {
+  const bulan = document.getElementById('a-rekap-bulan').value;
+  if (!bulan) return;
+  const nextBulan = addDays(bulan, 31).slice(0, 8) + '01';
+  const { data } = await db.from('pengajuan_cuti')
+    .select('*, perawat(nama)')
+    .eq('bulan', bulan).eq('status', 'aktif')
+    .order('tanggal_mulai');
+
+  const el = document.getElementById('rekap-preview');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><p>Belum ada data</p></div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap" style="margin-top:12px"><table class="tbl">
+    <tr><th>Perawat</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Tier</th></tr>
+    ${data.map(c => `<tr>
+      <td>${c.perawat?.nama||'?'}</td>
+      <td>${fmtDateShort(c.tanggal_mulai)}</td>
+      <td>${fmtDateShort(c.tanggal_selesai)}</td>
+      <td>${c.jumlah_hari}</td>
+      <td>${tierBadge(c.tier_saat_pengajuan)}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+async function exportExcel() {
+  const bulan = document.getElementById('a-rekap-bulan').value;
+  const { data } = await db.from('pengajuan_cuti')
+    .select('*, perawat(nama,no_hp)')
+    .eq('bulan', bulan).eq('status', 'aktif')
+    .order('tanggal_mulai');
+
+  if (!data?.length) { toast('Tidak ada data', 'warning'); return; }
+
+  const bulanLabel = new Date(bulan).toLocaleDateString('id-ID',
+    { month: 'long', year: 'numeric' });
+
+  // Sheet 1: Rekap list
+  const rows = [
+    ['REKAP CUTI PERAWAT — ' + bulanLabel.toUpperCase()],
+    [],
+    ['No', 'Nama Perawat', 'No HP', 'Tanggal Mulai', 'Tanggal Selesai',
+     'Jumlah Hari', 'Tier', 'Status'],
+    ...data.map((c, i) => [
+      i + 1,
+      c.perawat?.nama || '',
+      c.perawat?.no_hp || '',
+      new Date(c.tanggal_mulai).toLocaleDateString('id-ID'),
+      new Date(c.tanggal_selesai).toLocaleDateString('id-ID'),
+      c.jumlah_hari,
+      'Tier ' + c.tier_saat_pengajuan,
+      'Aktif'
+    ])
+  ];
+
+  // Sheet 2: Per tanggal
+  const d = new Date(bulan);
+  const yr = d.getFullYear(), mo = d.getMonth();
+  const totalDays = new Date(yr, mo+1, 0).getDate();
+  const calRows = [['Kalender Cuti — ' + bulanLabel], [],
+    ['Tanggal', ...data.map(c => c.perawat?.nama || '?')]];
+
+  for (let day = 1; day <= totalDays; day++) {
+    const ds = toDateStr(yr, mo, day);
+    const label = new Date(ds + 'T00:00:00').toLocaleDateString('id-ID',
+      { weekday: 'short', day: 'numeric', month: 'short' });
+    const row = [label, ...data.map(c =>
+      (ds >= c.tanggal_mulai && ds <= c.tanggal_selesai) ? '✓ Cuti' : ''
+    )];
+    calRows.push(row);
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(rows);
+  ws1['!cols'] = [{ wch:4 },{ wch:25 },{ wch:15 },{ wch:16 },{ wch:16 },{ wch:12 },{ wch:8 },{ wch:8 }];
+  const ws2 = XLSX.utils.aoa_to_sheet(calRows);
+  XLSX.utils.book_append_sheet(wb, ws1, 'Rekap Cuti');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Kalender');
+  XLSX.writeFile(wb, `Rekap_Cuti_${bulanLabel.replace(' ','_')}.xlsx`);
+  toast('File Excel didownload', 'success');
+}
+
+// ── BOOT ──
+window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('toast') || document.body.insertAdjacentHTML('beforeend',
+    '<div id="toast"></div>');
+
+  if (SUPA_URL === 'GANTI_SUPABASE_URL') {
+    document.body.innerHTML = `<div style="padding:40px;text-align:center;font-family:sans-serif">
+      <h2>⚠️ Konfigurasi Diperlukan</h2>
+      <p style="margin-top:12px;color:#666">Buka file index.html dan ganti<br>
+      <code>GANTI_SUPABASE_URL</code> dan <code>GANTI_SUPABASE_ANON_KEY</code><br>
+      dengan kredensial Supabase Anda.</p>
+    </div>`;
+    return;
+  }
+
+  // Restore session
+  const savedId = localStorage.getItem('perawat_id');
+  if (savedId) {
+    const { data } = await db.from('perawat').select('*').eq('id', savedId).single();
+    if (data && data.is_aktif) { currentPerawat = data; initApp(); return; }
+    localStorage.removeItem('perawat_id');
+  }
+  showScreen('screen-login');
+});
+</script>
+<div id="toast"></div>
+</body>
+</html>
