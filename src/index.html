@@ -698,27 +698,27 @@ function buildAdminMonthDropdowns(months) {
     });
   });
 
-
   // Tanggal buka listener
-const bukaInput = document.getElementById('a-buka');
-if (bukaInput) {
-  bukaInput.addEventListener('input', e => {
-    const v = e.target.value;
-    if (!v) return;
-    
-    // Cuti Utama: 3 hari setelah dibuka
-    document.getElementById('a-tenggat1').value = addDays(v, 3);
-    
-    // Cuti Tambahan: 3 hari setelah tenggat Utama
-    const t1 = addDays(v, 3);
-    document.getElementById('a-tenggat2').value = addDays(t1, 3);
-    
-    // Cuti Nyempil: Hingga akhir bulan (mengambil t2 lalu cari akhir bulan)
-    const d = new Date(v);
-    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0); 
-    document.getElementById('a-tenggat3').value = lastDay.toISOString().slice(0, 10);
-  });
-}
+  const bukaInput = document.getElementById('a-buka');
+  if (bukaInput) {
+    bukaInput.addEventListener('input', e => {
+      const v = e.target.value;
+      if (!v) return;
+
+      // Cuti Utama: 3 hari setelah dibuka
+      document.getElementById('a-tenggat1').value = addDays(v, 3);
+
+      // Cuti Tambahan: 3 hari setelah tenggat Utama
+      const t1 = addDays(v, 3);
+      document.getElementById('a-tenggat2').value = addDays(t1, 3);
+
+      // Cuti Nyempil: Hingga akhir bulan (mengambil t2 lalu cari akhir bulan)
+      const d = new Date(v);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      document.getElementById('a-tenggat3').value = lastDay.toISOString().slice(0, 10);
+    });
+  }
+} // ← FIX: kurung penutup fungsi buildAdminMonthDropdowns yang sebelumnya hilang
 
 // ── TAB NAVIGATION ──
 function showTab(name) {
