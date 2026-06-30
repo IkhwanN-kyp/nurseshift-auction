@@ -392,11 +392,11 @@
         <select id="a-bulan"></select>
         <label>Tanggal mulai pengajuan</label>
         <input type="date" id="a-buka">
-        <label>Tenggat Tier 1 (otomatis +3 hari)</label>
+        <label>Tenggat Cuti Utama (otomatis +3 hari)</label>
         <input type="date" id="a-tenggat1" readonly style="background:var(--gray-50)">
-        <label>Tenggat Tier 2 (hari setelah tenggat T1)</label>
+        <label>Tenggat Cuti Tambahan (hari setelah tenggat Utama)</label>
         <input type="date" id="a-tenggat2" readonly style="background:var(--gray-50)">
-        <label>Batas Tier 3 (hari setelah tenggat T2)</label>
+        <label>Batas Cuti Nyempil (hari setelah tenggat Tambahan)</label>
         <input type="date" id="a-tenggat3" readonly style="background:var(--gray-50)">
         <button class="btn btn-primary" onclick="simpanPeriode()">Simpan Periode</button>
       </div>
@@ -406,16 +406,16 @@
     <!-- Admin: Tier -->
     <div id="admin-tab-tier" style="display:none">
       <div class="card">
-        <div class="card-title">Atur Tier Perawat</div>
+        <div class="card-title">Atur Status Cuti Perawat</div>
         <label>Bulan</label>
         <select id="a-tier-bulan"></select>
         <label>Perawat</label>
         <select id="a-tier-perawat"></select>
-        <label>Tier</label>
+        <label>Status Cuti</label>
         <select id="a-tier-nilai">
-          <option value="1">Tier 1 — Utama</option>
-          <option value="2">Tier 2 — Tambahan</option>
-          <option value="3">Tier 3 — Default</option>
+          <option value="1">Cuti Utama</option>
+          <option value="2">Cuti Tambahan</option>
+          <option value="3">Cuti Nyempil</option>
         </select>
         <button class="btn btn-primary" onclick="simpanTier()">Simpan Tier</button>
       </div>
@@ -547,7 +547,8 @@ function monthLabel(y, m) {
 }
 
 function tierBadge(t) {
-  return `<span class="tier-badge tier-${t}">Tier ${t}</span>`;
+  const labels = { 1: 'Cuti Utama', 2: 'Cuti Tambahan', 3: 'Cuti Nyempil' };
+  return `<span class="tier-badge tier-${t}">${labels[t] || 'Tier ' + t}</span>`;
 }
 
 function hashPw(pw) {
@@ -697,17 +698,26 @@ function buildAdminMonthDropdowns(months) {
     });
   });
 
+
   // Tanggal buka listener
-  const bukaInput = document.getElementById('a-buka');
-  if (bukaInput) {
-    bukaInput.addEventListener('input', e => {
-      const v = e.target.value;
-      if (!v) return;
-      document.getElementById('a-tenggat1').value = addDays(v, 3);
-      document.getElementById('a-tenggat2').value = addDays(v, 4);
-      document.getElementById('a-tenggat3').value = addDays(v, 5);
-    });
-  }
+const bukaInput = document.getElementById('a-buka');
+if (bukaInput) {
+  bukaInput.addEventListener('input', e => {
+    const v = e.target.value;
+    if (!v) return;
+    
+    // Cuti Utama: 3 hari setelah dibuka
+    document.getElementById('a-tenggat1').value = addDays(v, 3);
+    
+    // Cuti Tambahan: 3 hari setelah tenggat Utama
+    const t1 = addDays(v, 3);
+    document.getElementById('a-tenggat2').value = addDays(t1, 3);
+    
+    // Cuti Nyempil: Hingga akhir bulan (mengambil t2 lalu cari akhir bulan)
+    const d = new Date(v);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0); 
+    document.getElementById('a-tenggat3').value = lastDay.toISOString().slice(0, 10);
+  });
 }
 
 // ── TAB NAVIGATION ──
@@ -941,17 +951,17 @@ async function loadWindowInfo() {
   if (today < data.buka_tanggal) {
     msg = `Pengajuan dibuka ${fmtDate(data.buka_tanggal)}`; cls = 'window-wait';
   } else if (tier === 1 && today <= data.tenggat_tier1) {
-    msg = `Anda Tier 1 — Tenggat: ${fmtDate(data.tenggat_tier1)}`;
+    msg = `Status: Cuti Utama — Tenggat: ${fmtDate(data.tenggat_tier1)}`;
   } else if (tier === 1 && today > data.tenggat_tier1) {
-    msg = `Tenggat Tier 1 lewat — Anda masuk antrean Tier 2`; cls = 'window-wait';
+    msg = `Tenggat Cuti Utama terlewat — Anda masuk antrean Cuti Tambahan`; cls = 'window-wait';
   } else if (tier === 2 && today <= data.tenggat_tier1) {
-    msg = `Anda Tier 2 — Menunggu Tier 1 selesai (${fmtDate(data.tenggat_tier1)})`; cls = 'window-wait';
+    msg = `Status: Cuti Tambahan — Menunggu Cuti Utama selesai menginput (${fmtDate(data.tenggat_tier1)})`; cls = 'window-wait';
   } else if (tier === 2 && today > data.tenggat_tier1) {
-    msg = `Anda Tier 2 — Window aktif s/d ${fmtDate(data.tenggat_tier2)}`;
+    msg = `Status: Cuti Tambahan — Window aktif s/d ${fmtDate(data.tenggat_tier2)}`;
   } else if (tier === 3 && today <= data.tenggat_tier2) {
-    msg = `Anda Tier 3 — Menunggu Tier 1&2 selesai (${fmtDate(data.tenggat_tier2)})`; cls = 'window-wait';
+    msg = `Status: Cuti Nyempil — Menunggu Utama & Tambahan selesai (${fmtDate(data.tenggat_tier2)})`; cls = 'window-wait';
   } else {
-    msg = `Anda Tier 3 — Window aktif`;
+    msg = `Status: Cuti Nyempil — Window aktif`;
   }
 
   bar.innerHTML = `<div class="window-info ${cls}">${tierBadge(tier)} ${msg}</div>`;
@@ -1128,12 +1138,27 @@ async function simpanTier() {
   const bulan = document.getElementById('a-tier-bulan').value;
   const pid   = document.getElementById('a-tier-perawat').value;
   const tier  = parseInt(document.getElementById('a-tier-nilai').value);
+  
   if (!bulan || !pid) { toast('Pilih semua', 'error'); return; }
 
-  const { error } = await db.from('tier_bulanan').upsert(
-    { perawat_id: pid, bulan, tier }, { onConflict: 'perawat_id,bulan' });
-  if (error) { toast('Gagal: ' + error.message, 'error'); return; }
-  toast('Tier disimpan', 'success');
+  // Gunakan insert alih-alih upsert jika ingin mengizinkan perawat pindah tier dengan mudah
+  const { error } = await db.from('tier_bulanan').insert({ 
+    perawat_id: pid, 
+    bulan, 
+    tier 
+  });
+
+  if (error) { 
+    // Jika error karena sudah ada (duplikat), gunakan update
+    const { error: updateErr } = await db.from('tier_bulanan')
+      .update({ tier })
+      .eq('perawat_id', pid)
+      .eq('bulan', bulan);
+      
+    if (updateErr) { toast('Gagal: ' + updateErr.message, 'error'); return; }
+  }
+  
+  toast('Status Cuti disimpan', 'success');
   loadTierAdmin();
 }
 
@@ -1286,8 +1311,7 @@ async function exportExcel() {
   const rows = [
     ['REKAP CUTI PERAWAT — ' + bulanLabel.toUpperCase()],
     [],
-    ['No', 'Nama Perawat', 'No HP', 'Tanggal Mulai', 'Tanggal Selesai',
-     'Jumlah Hari', 'Tier', 'Status'],
+    ['No', 'Nama Perawat', 'No HP', 'Tanggal Mulai', 'Tanggal Selesai', 'Jumlah Hari', 'Status Cuti', 'Status'],
     ...data.map((c, i) => [
       i + 1,
       c.perawat?.nama || '',
@@ -1295,7 +1319,7 @@ async function exportExcel() {
       new Date(c.tanggal_mulai).toLocaleDateString('id-ID'),
       new Date(c.tanggal_selesai).toLocaleDateString('id-ID'),
       c.jumlah_hari,
-      'Tier ' + c.tier_saat_pengajuan,
+      c.tier_saat_pengajuan === 1 ? 'Cuti Utama' : (c.tier_saat_pengajuan === 2 ? 'Cuti Tambahan' : 'Cuti Nyempil'),
       'Aktif'
     ])
   ];
