@@ -19,9 +19,6 @@
     --gray-400: #94a3b8;
     --gray-600: #475569;
     --gray-800: #1e293b;
-    --tier1: #f59e0b;
-    --tier2: #3b82f6;
-    --tier3: #94a3b8;
     --radius: 12px;
     --shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
@@ -40,7 +37,7 @@
     padding: 32px 28px; width: 100%; max-width: 400px; }
   .auth-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; color: var(--gray-800); }
   .auth-card p { color: var(--gray-600); font-size: 14px; margin-bottom: 24px; }
-  .logo { font-size: 32px; margin-bottom: 12px; }
+  .logo { font-size: 32px; margin-bottom: 12px; text-align: center; }
 
   /* ── FORM ELEMENTS ── */
   label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600);
@@ -194,16 +191,6 @@
   .tbl td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
   .tbl-wrap { overflow-x: auto; border-radius: 8px; border: 1.5px solid var(--gray-200); }
 
-  /* ── MODAL ── */
-  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
-    display: flex; align-items: flex-end; justify-content: center; display: none; }
-  .modal-bg.open { display: flex; }
-  .modal { background: #fff; border-radius: 16px 16px 0 0; padding: 24px 20px;
-    width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
-  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-  .modal-close { float: right; background: none; border: none; font-size: 22px;
-    cursor: pointer; color: var(--gray-400); line-height: 1; }
-
   /* ── PROFILE LOGOUT ── */
   .profile-menu { position: absolute; right: 20px; top: 60px; background: #fff;
     border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
@@ -226,56 +213,28 @@
     border-top-color: var(--primary); border-radius: 50%; animation: spin .6s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-center { display: flex; justify-content: center; padding: 40px; }
-
   .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-400); }
   .empty-state p { font-size: 14px; margin-top: 8px; }
 </style>
 </head>
 <body>
 
-<!-- ══════════ SCREENS ══════════ -->
-
-<!-- LOGIN -->
 <div id="screen-login" class="screen active">
 <div class="auth-wrap">
 <div class="auth-card">
   <div class="logo">🏥</div>
-  <h1>Lelang Cuti Perawat 7A</h1>
-  <p>Masuk dengan Nama Perawat</p>
+  <h1 style="text-align:center">Lelang Cuti Perawat 7A</h1>
+  <p style="text-align:center">Masuk dengan Nama Perawat</p>
   <label>Nama Perawat</label>
-  <input type="text" id="login-nama" placeholder="Masukkan nama Anda">
+  <input type="text" id="login-nama" placeholder="Masukkan nama Anda (Contoh: Tyas)">
   <label>Password</label>
-  <input type="password" id="login-pw" placeholder="Password">
+  <input type="password" id="login-pw" placeholder="Password (Contoh: Perawat7a)">
   <button class="btn btn-primary" onclick="doLogin()">Masuk</button>
-  <a class="link" onclick="showScreen('screen-register')">Belum punya akun? Daftar dengan kode undangan</a>
+  <a class="link" onclick="lupaPassword()">Lupa password? Hubungi Admin</a>
 </div>
 </div>
 </div>
 
-<!-- REGISTER -->
-<div id="screen-register" class="screen">
-<div class="auth-wrap">
-<div class="auth-card">
-  <div class="logo">📋</div>
-  <h1>Daftar Akun</h1>
-  <p>Masukkan kode undangan dari admin</p>
-  <label>Kode Undangan</label>
-  <input type="text" id="reg-kode" placeholder="Contoh: RS2025ABC" style="text-transform:uppercase">
-  <label>Nama Lengkap</label>
-  <input type="text" id="reg-nama" placeholder="Nama sesuai data RS">
-  <label>No. HP (untuk login)</label>
-  <input type="tel" id="reg-hp" placeholder="08xxxxxxxxxx" inputmode="tel">
-  <label>Password</label>
-  <input type="password" id="reg-pw" placeholder="Min 6 karakter">
-  <label>Ulangi Password</label>
-  <input type="password" id="reg-pw2" placeholder="Ulangi password">
-  <button class="btn btn-primary" onclick="doRegister()">Daftar</button>
-  <a class="link" onclick="showScreen('screen-login')">Sudah punya akun? Masuk</a>
-</div>
-</div>
-</div>
-
-<!-- MAIN APP -->
 <div id="screen-app" class="screen">
 <div class="app-header">
   <h2 id="header-title">🏥 Cuti Perawat</h2>
@@ -295,7 +254,6 @@
 
 <div class="app-content">
 
-  <!-- TAB: KALENDER -->
   <div id="tab-kalender" class="tab-content">
     <div class="month-pills" id="month-pills"></div>
     <div id="window-info-bar"></div>
@@ -335,13 +293,11 @@
     </div>
   </div>
 
-  <!-- TAB: STATUS -->
   <div id="tab-status" class="tab-content" style="display:none">
     <div class="section-title">Riwayat Cuti Saya</div>
     <div id="status-list"></div>
   </div>
 
-  <!-- TAB: NOTIF -->
   <div id="tab-notif" class="tab-content" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div class="section-title" style="margin:0">Notifikasi</div>
@@ -350,7 +306,6 @@
     <div id="notif-list"></div>
   </div>
 
-  <!-- TAB: PROFIL -->
   <div id="tab-profile" class="tab-content" style="display:none">
     <div class="card" style="margin-top:8px">
       <div class="card-title">Profil Saya</div>
@@ -359,7 +314,7 @@
       <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="p-admin"></span></div>
     </div>
     <div class="card" id="tier-kartu">
-      <div class="card-title">Tier Saya</div>
+      <div class="card-title">Status Cuti Saya</div>
       <div id="tier-list"></div>
     </div>
     <div class="card">
@@ -373,18 +328,15 @@
     <button class="btn btn-danger" onclick="doLogout()" style="margin-top:8px">Keluar</button>
   </div>
 
-  <!-- TAB: ADMIN -->
   <div id="tab-admin" class="tab-content" style="display:none">
     <div class="admin-tabs">
       <button class="admin-tab active" onclick="switchAdminTab('periode')">📅 Periode</button>
-      <button class="admin-tab" onclick="switchAdminTab('tier')">🏅 Tier</button>
+      <button class="admin-tab" onclick="switchAdminTab('tier')">🏅 Status Cuti</button>
       <button class="admin-tab" onclick="switchAdminTab('blokir')">🚫 Blokir</button>
       <button class="admin-tab" onclick="switchAdminTab('perawat')">👥 Perawat</button>
-      <button class="admin-tab" onclick="switchAdminTab('kode')">🎟 Kode</button>
       <button class="admin-tab" onclick="switchAdminTab('rekap')">📊 Rekap</button>
     </div>
 
-    <!-- Admin: Periode -->
     <div id="admin-tab-periode">
       <div class="card">
         <div class="card-title">Buka Periode Pengajuan</div>
@@ -394,16 +346,15 @@
         <input type="date" id="a-buka">
         <label>Tenggat Cuti Utama (otomatis +3 hari)</label>
         <input type="date" id="a-tenggat1" readonly style="background:var(--gray-50)">
-        <label>Tenggat Cuti Tambahan (hari setelah tenggat Utama)</label>
+        <label>Tenggat Cuti Tambahan (+3 hari setelah tenggat Utama)</label>
         <input type="date" id="a-tenggat2" readonly style="background:var(--gray-50)">
-        <label>Batas Cuti Nyempil (hari setelah tenggat Tambahan)</label>
+        <label>Batas Cuti Nyempil (Hingga akhir bulan)</label>
         <input type="date" id="a-tenggat3" readonly style="background:var(--gray-50)">
         <button class="btn btn-primary" onclick="simpanPeriode()">Simpan Periode</button>
       </div>
       <div id="periode-list"></div>
     </div>
 
-    <!-- Admin: Tier -->
     <div id="admin-tab-tier" style="display:none">
       <div class="card">
         <div class="card-title">Atur Status Cuti Perawat</div>
@@ -417,12 +368,11 @@
           <option value="2">Cuti Tambahan</option>
           <option value="3">Cuti Nyempil</option>
         </select>
-        <button class="btn btn-primary" onclick="simpanTier()">Simpan Tier</button>
+        <button class="btn btn-primary" onclick="simpanTier()">Simpan Status</button>
       </div>
       <div id="tier-admin-list" style="margin-top:12px"></div>
     </div>
 
-    <!-- Admin: Blokir -->
     <div id="admin-tab-blokir" style="display:none">
       <div class="card">
         <div class="card-title">Blokir Tanggal</div>
@@ -435,23 +385,10 @@
       <div id="blokir-list" style="margin-top:12px"></div>
     </div>
 
-    <!-- Admin: Perawat -->
     <div id="admin-tab-perawat" style="display:none">
       <div id="perawat-list"></div>
     </div>
 
-    <!-- Admin: Kode Undangan -->
-    <div id="admin-tab-kode" style="display:none">
-      <div class="card">
-        <div class="card-title">Generate Kode Undangan</div>
-        <label>Jumlah kode</label>
-        <input type="number" id="a-jml-kode" value="5" min="1" max="50">
-        <button class="btn btn-primary" onclick="genKode()">Generate Kode</button>
-      </div>
-      <div id="kode-list" style="margin-top:12px"></div>
-    </div>
-
-    <!-- Admin: Rekap -->
     <div id="admin-tab-rekap" style="display:none">
       <div class="card">
         <div class="card-title">Export Rekap Cuti</div>
@@ -462,12 +399,7 @@
       <div id="rekap-preview"></div>
     </div>
 
-  </div><!-- /tab-admin -->
-
-</div><!-- /app-content -->
-
-<!-- Bottom Nav -->
-<nav class="bottom-nav">
+  </div></div><nav class="bottom-nav">
   <button class="nav-item active" id="nav-kalender" onclick="showTab('kalender')">
     <span>📅</span>Kalender
   </button>
@@ -482,11 +414,8 @@
   </button>
 </nav>
 
-</div><!-- /screen-app -->
-
-<!-- ══════════ SCRIPTS ══════════ -->
-<script>
-// ── CONFIG: ganti dengan URL & KEY Supabase Anda ──
+</div><script>
+// ── CONFIG: URL & KEY Supabase Anda ──
 const SUPA_URL = 'https://tzkkxfgowrcglbhakmmh.supabase.co';
 const SUPA_KEY = 'sb_publishable_UF-KcPKv0C9quewrbCmwQA_s9_pR6S6';
 
@@ -504,7 +433,7 @@ let slotCache = {};
 let blokirSet = new Set();
 let myCutiRanges = [];
 let availableMonths = [];
-let activeCalMonth = null; // date string 'YYYY-MM-01'
+let activeCalMonth = null; 
 
 // ── UTILS ──
 function toast(msg, type='') {
@@ -548,68 +477,32 @@ function monthLabel(y, m) {
 
 function tierBadge(t) {
   const labels = { 1: 'Cuti Utama', 2: 'Cuti Tambahan', 3: 'Cuti Nyempil' };
-  return `<span class="tier-badge tier-${t}">${labels[t] || 'Tier ' + t}</span>`;
+  return `<span class="tier-badge tier-${t}">${labels[t] || 'Status ' + t}</span>`;
 }
 
-function hashPw(pw) {
-  // Simple hash — untuk produksi gunakan bcrypt di backend
-  let h = 0;
-  for (let i = 0; i < pw.length; i++) { h = Math.imul(31, h) + pw.charCodeAt(i) | 0; }
-  return 'h_' + Math.abs(h).toString(36) + pw.length;
+function lupaPassword() {
+  toast('Silakan hubungi Admin (Ikhwan) untuk reset/mengetahui password Anda.', 'warning');
 }
 
 // ── AUTH ──
 async function doLogin() {
-  // Ubah dari login-hp ke login-nama
   const nama = document.getElementById('login-nama').value.trim(); 
   const pw = document.getElementById('login-pw').value;
-  if (!nama || !pw) { toast('Isi semua field', 'error'); return; }
+  
+  if (!nama || !pw) { toast('Isi Nama dan Password', 'error'); return; }
 
   // Query mencari berdasarkan 'nama'
   const { data, error } = await db.from('perawat')
     .select('*').eq('nama', nama).eq('is_aktif', true).single();
 
-  if (error || !data) { toast('Nama tidak ditemukan', 'error'); return; }
-  if (data.password_hash !== hashPw(pw)) { toast('Password salah', 'error'); return; }
+  if (error || !data) { toast('Nama perawat tidak ditemukan / tidak aktif', 'error'); return; }
+  
+  // Karena sekarang pakai teks mentah di DB, kita tinggal samakan saja.
+  if (data.password_hash !== pw) { toast('Password salah', 'error'); return; }
 
   currentPerawat = data;
   localStorage.setItem('perawat_id', data.id);
   initApp();
-}
-
-async function doRegister() {
-  const kode = document.getElementById('reg-kode').value.trim().toUpperCase();
-  const nama = document.getElementById('reg-nama').value.trim();
-  const hp   = document.getElementById('reg-hp').value.trim();
-  const pw   = document.getElementById('reg-pw').value;
-  const pw2  = document.getElementById('reg-pw2').value;
-
-  if (!kode || !nama || !hp || !pw) { toast('Isi semua field', 'error'); return; }
-  if (pw !== pw2) { toast('Password tidak sama', 'error'); return; }
-  if (pw.length < 6) { toast('Password min 6 karakter', 'error'); return; }
-
-  // Cek kode undangan
-  const { data: kd } = await db.from('kode_undangan')
-    .select('*').eq('kode', kode).eq('is_terpakai', false).single();
-  if (!kd) { toast('Kode undangan tidak valid atau sudah dipakai', 'error'); return; }
-
-  // Cek HP sudah ada
-  const { data: existing } = await db.from('perawat').select('id').eq('no_hp', hp).single();
-  if (existing) { toast('No HP sudah terdaftar', 'error'); return; }
-
-  // Simpan perawat
-  const { data: newP, error } = await db.from('perawat').insert({
-    nama, no_hp: hp, password_hash: hashPw(pw), kode_undangan: kode
-  }).select().single();
-
-  if (error) { toast('Gagal mendaftar: ' + error.message, 'error'); return; }
-
-  // Tandai kode terpakai
-  await db.from('kode_undangan').update({ is_terpakai: true, dipakai_oleh: newP.id })
-    .eq('id', kd.id);
-
-  toast('Registrasi berhasil! Silakan login', 'success');
-  showScreen('screen-login');
 }
 
 async function doLogout() {
@@ -648,7 +541,6 @@ async function initApp() {
 function buildMonthPills() {
   const now = new Date();
   const months = [];
-  // Tampilkan bulan sekarang +1 sampai +6
   for (let i = 1; i <= 6; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
     months.push({ y: d.getFullYear(), m: d.getMonth() });
@@ -673,13 +565,11 @@ function buildMonthPills() {
     pills.appendChild(btn);
   });
 
-  // Set default bulan pertama
   if (months.length > 0) {
     calYear = months[0].y; calMonth = months[0].m;
     activeCalMonth = toDateStr(months[0].y, months[0].m, 1);
   }
 
-  // Build bulan dropdowns admin
   buildAdminMonthDropdowns(months);
 }
 
@@ -698,27 +588,24 @@ function buildAdminMonthDropdowns(months) {
     });
   });
 
-  // Tanggal buka listener
   const bukaInput = document.getElementById('a-buka');
   if (bukaInput) {
     bukaInput.addEventListener('input', e => {
       const v = e.target.value;
       if (!v) return;
-
-      // Cuti Utama: 3 hari setelah dibuka
-      document.getElementById('a-tenggat1').value = addDays(v, 3);
-
-      // Cuti Tambahan: 3 hari setelah tenggat Utama
+      
       const t1 = addDays(v, 3);
-      document.getElementById('a-tenggat2').value = addDays(t1, 3);
-
-      // Cuti Nyempil: Hingga akhir bulan (mengambil t2 lalu cari akhir bulan)
+      document.getElementById('a-tenggat1').value = t1;
+      
+      const t2 = addDays(t1, 3);
+      document.getElementById('a-tenggat2').value = t2;
+      
       const d = new Date(v);
-      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0); 
       document.getElementById('a-tenggat3').value = lastDay.toISOString().slice(0, 10);
     });
   }
-} // ← FIX: kurung penutup fungsi buildAdminMonthDropdowns yang sebelumnya hilang
+}
 
 // ── TAB NAVIGATION ──
 function showTab(name) {
@@ -762,23 +649,19 @@ async function loadSlotData() {
   blokirSet = new Set();
   myCutiRanges = [];
 
-  // Load slot data
   const { data: cutiData } = await db.from('pengajuan_cuti')
     .select('tanggal_mulai, tanggal_selesai, perawat_id')
     .eq('status', 'aktif')
     .lte('tanggal_mulai', lastDay).gte('tanggal_selesai', firstDay);
 
-  // Load blokir
   const { data: blokirData } = await db.from('tanggal_blokir')
     .select('tanggal, alasan').gte('tanggal', firstDay).lte('tanggal', lastDay);
   if (blokirData) blokirData.forEach(b => blokirSet.add(b.tanggal));
 
-  // Load pengaturan slot
   const { data: setting } = await db.from('pengaturan_periode')
     .select('slot_normal').eq('bulan', firstDay).single();
   const slotMax = setting?.slot_normal || 2;
 
-  // Hitung per tanggal
   const days = new Date(y, m+1, 0).getDate();
   for (let d = 1; d <= days; d++) {
     const ds = toDateStr(y, m, d);
@@ -791,7 +674,6 @@ async function loadSlotData() {
     slotCache[ds] = { terpakai: count, max: slotMax, sisa: Math.max(0, slotMax - count) };
   }
 
-  // Cuti saya
   if (cutiData && currentPerawat) {
     cutiData.filter(c => c.perawat_id === currentPerawat.id).forEach(c => {
       myCutiRanges.push({ mulai: c.tanggal_mulai, selesai: c.tanggal_selesai });
@@ -864,12 +746,10 @@ function pickDay(ds) {
     selectedStart = ds;
     selectedEnd = ds;
   } else {
-    // Validasi: harus berurutan, tidak lompat, max 6 hari
     const s = new Date(selectedStart + 'T00:00:00');
     const e = new Date(ds + 'T00:00:00');
     if (e < s) { selectedStart = ds; selectedEnd = ds; }
     else {
-      // Cek tidak ada blokir di antara range
       let check = new Date(selectedStart + 'T00:00:00');
       let valid = true;
       while (check <= e) {
@@ -955,7 +835,7 @@ async function loadWindowInfo() {
   } else if (tier === 1 && today > data.tenggat_tier1) {
     msg = `Tenggat Cuti Utama terlewat — Anda masuk antrean Cuti Tambahan`; cls = 'window-wait';
   } else if (tier === 2 && today <= data.tenggat_tier1) {
-    msg = `Status: Cuti Tambahan — Menunggu Cuti Utama selesai menginput (${fmtDate(data.tenggat_tier1)})`; cls = 'window-wait';
+    msg = `Status: Cuti Tambahan — Menunggu Cuti Utama selesai (${fmtDate(data.tenggat_tier1)})`; cls = 'window-wait';
   } else if (tier === 2 && today > data.tenggat_tier1) {
     msg = `Status: Cuti Tambahan — Window aktif s/d ${fmtDate(data.tenggat_tier2)}`;
   } else if (tier === 3 && today <= data.tenggat_tier2) {
@@ -1027,7 +907,6 @@ async function loadNotif() {
     </div>
   `).join('');
 
-  // Mark all as read
   await db.from('notifikasi').update({ is_dibaca: true })
     .eq('perawat_id', currentPerawat.id).eq('is_dibaca', false);
   updateBadge(0);
@@ -1057,7 +936,6 @@ async function loadProfile() {
   document.getElementById('p-hp').textContent = currentPerawat.no_hp;
   document.getElementById('p-admin').textContent = currentPerawat.is_admin ? '🛡 Admin' : 'Perawat';
 
-  // Tier 6 bulan ke depan
   const now = new Date();
   const rows = [];
   for (let i = 1; i <= 6; i++) {
@@ -1090,11 +968,10 @@ function switchAdminTab(name) {
   document.querySelectorAll('[id^="admin-tab-"]').forEach(el => el.style.display = 'none');
   document.getElementById('admin-tab-' + name).style.display = 'block';
   document.querySelectorAll('.admin-tab').forEach((t, i) => {
-    const tabs = ['periode','tier','blokir','perawat','kode','rekap'];
+    const tabs = ['periode','tier','blokir','perawat','rekap'];
     t.classList.toggle('active', tabs[i] === name);
   });
   if (name === 'perawat') loadPerawatAdmin();
-  if (name === 'kode') loadKodeAdmin();
   if (name === 'blokir') loadBlokirAdmin();
   if (name === 'tier') loadTierAdmin();
   if (name === 'rekap') loadRekapPreview();
@@ -1141,7 +1018,6 @@ async function simpanTier() {
   
   if (!bulan || !pid) { toast('Pilih semua', 'error'); return; }
 
-  // Gunakan insert alih-alih upsert jika ingin mengizinkan perawat pindah tier dengan mudah
   const { error } = await db.from('tier_bulanan').insert({ 
     perawat_id: pid, 
     bulan, 
@@ -1149,7 +1025,6 @@ async function simpanTier() {
   });
 
   if (error) { 
-    // Jika error karena sudah ada (duplikat), gunakan update
     const { error: updateErr } = await db.from('tier_bulanan')
       .update({ tier })
       .eq('perawat_id', pid)
@@ -1163,21 +1038,19 @@ async function simpanTier() {
 }
 
 async function loadTierAdmin() {
-  // Load perawat untuk dropdown
   const { data: perawatData } = await db.from('perawat').select('id,nama')
     .eq('is_aktif', true).order('nama');
   const sel = document.getElementById('a-tier-perawat');
   sel.innerHTML = perawatData?.map(p => `<option value="${p.id}">${p.nama}</option>`).join('') || '';
 
-  // Load tier bulan aktif
   const bulan = document.getElementById('a-tier-bulan').value;
   if (!bulan) return;
   const { data } = await db.from('tier_bulanan').select('*, perawat(nama)')
     .eq('bulan', bulan).order('tier');
   const el = document.getElementById('tier-admin-list');
-  if (!data?.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:13px;padding:8px">Belum ada tier diatur</p>'; return; }
+  if (!data?.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:13px;padding:8px">Belum ada pengaturan</p>'; return; }
   el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
-    <tr><th>Perawat</th><th>Tier</th><th></th></tr>
+    <tr><th>Perawat</th><th>Status Cuti</th><th></th></tr>
     ${data.map(t => `<tr>
       <td>${t.perawat?.nama || '?'}</td>
       <td>${tierBadge(t.tier)}</td>
@@ -1229,7 +1102,7 @@ async function loadPerawatAdmin() {
     <tr><th>Nama</th><th>HP</th><th>Status</th><th></th></tr>
     ${(data||[]).map(p => `<tr>
       <td>${p.nama}</td>
-      <td>${p.no_hp}</td>
+      <td>${p.no_hp || '-'}</td>
       <td>${p.is_aktif ? '✓ Aktif' : '✗ Non-aktif'}</td>
       <td><button class="btn btn-ghost btn-sm" onclick="toggleAktif('${p.id}',${p.is_aktif})">
         ${p.is_aktif ? 'Non-aktif' : 'Aktifkan'}
@@ -1243,39 +1116,10 @@ async function toggleAktif(id, isAktif) {
   loadPerawatAdmin();
 }
 
-async function genKode() {
-  const n = parseInt(document.getElementById('a-jml-kode').value) || 5;
-  const kodes = [];
-  for (let i = 0; i < n; i++) {
-    const k = 'RS' + Math.random().toString(36).substr(2,6).toUpperCase();
-    kodes.push({ kode: k, dibuat_oleh: currentPerawat.id });
-  }
-  const { error } = await db.from('kode_undangan').insert(kodes);
-  if (error) { toast('Gagal: ' + error.message, 'error'); return; }
-  toast(`${n} kode berhasil dibuat`, 'success');
-  loadKodeAdmin();
-}
-
-async function loadKodeAdmin() {
-  const { data } = await db.from('kode_undangan')
-    .select('*, dipakai: perawat!kode_undangan_dipakai_oleh_fkey(nama)')
-    .order('created_at', { ascending: false });
-  const el = document.getElementById('kode-list');
-  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
-    <tr><th>Kode</th><th>Status</th><th>Dipakai</th></tr>
-    ${(data||[]).map(k => `<tr>
-      <td style="font-family:monospace;font-weight:700">${k.kode}</td>
-      <td>${k.is_terpakai ? '<span style="color:var(--gray-400)">Terpakai</span>' : '<span style="color:var(--success)">Tersedia</span>'}</td>
-      <td>${k.dipakai?.nama || '—'}</td>
-    </tr>`).join('')}
-  </table></div>`;
-}
-
 // ── REKAP EXCEL ──
 async function loadRekapPreview() {
   const bulan = document.getElementById('a-rekap-bulan').value;
   if (!bulan) return;
-  const nextBulan = addDays(bulan, 31).slice(0, 8) + '01';
   const { data } = await db.from('pengajuan_cuti')
     .select('*, perawat(nama)')
     .eq('bulan', bulan).eq('status', 'aktif')
@@ -1284,7 +1128,7 @@ async function loadRekapPreview() {
   const el = document.getElementById('rekap-preview');
   if (!data?.length) { el.innerHTML = '<div class="empty-state"><p>Belum ada data</p></div>'; return; }
   el.innerHTML = `<div class="tbl-wrap" style="margin-top:12px"><table class="tbl">
-    <tr><th>Perawat</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Tier</th></tr>
+    <tr><th>Perawat</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Status Cuti</th></tr>
     ${data.map(c => `<tr>
       <td>${c.perawat?.nama||'?'}</td>
       <td>${fmtDateShort(c.tanggal_mulai)}</td>
@@ -1307,7 +1151,6 @@ async function exportExcel() {
   const bulanLabel = new Date(bulan).toLocaleDateString('id-ID',
     { month: 'long', year: 'numeric' });
 
-  // Sheet 1: Rekap list
   const rows = [
     ['REKAP CUTI PERAWAT — ' + bulanLabel.toUpperCase()],
     [],
@@ -1324,7 +1167,6 @@ async function exportExcel() {
     ])
   ];
 
-  // Sheet 2: Per tanggal
   const d = new Date(bulan);
   const yr = d.getFullYear(), mo = d.getMonth();
   const totalDays = new Date(yr, mo+1, 0).getDate();
@@ -1359,14 +1201,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (SUPA_URL === 'GANTI_SUPABASE_URL') {
     document.body.innerHTML = `<div style="padding:40px;text-align:center;font-family:sans-serif">
       <h2>⚠️ Konfigurasi Diperlukan</h2>
-      <p style="margin-top:12px;color:#666">Buka file index.html dan ganti<br>
-      <code>GANTI_SUPABASE_URL</code> dan <code>GANTI_SUPABASE_ANON_KEY</code><br>
-      dengan kredensial Supabase Anda.</p>
+      <p style="margin-top:12px;color:#666">Buka file index.html dan ganti url supabase</p>
     </div>`;
     return;
   }
 
-  // Restore session
   const savedId = localStorage.getItem('perawat_id');
   if (savedId) {
     const { data } = await db.from('perawat').select('*').eq('id', savedId).single();
