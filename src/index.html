@@ -323,7 +323,33 @@
       <input type="tel" id="p-edit-hp">
       <label>Email</label>
       <input type="email" id="p-edit-email">
-      <label>Password Baru (Kosongkan jika tidak diganti)</label>
+
+      <label>Agama</label>
+      <select id="p-edit-agama">
+        <option value="">Pilih Agama</option>
+        <option value="Islam">Islam</option>
+        <option value="Kristen">Kristen</option>
+        <option value="Katholik">Katholik</option>
+      </select>
+      
+      <div class="card">
+        <div class="card-title">Riwayat Cuti Hari Raya</div>
+        <label>Riwayat Cuti Idul Fitri (Tahun)</label>
+        <input type="text" id="p-edit-fitri" placeholder="Contoh: 2016, 2025">
+        
+        <label>Riwayat Cuti Idul Adha (Tahun)</label>
+        <input type="text" id="p-edit-adha" placeholder="Contoh: 2017, 2024">
+        
+        <label>Riwayat Cuti Natal (Tahun)</label>
+        <input type="text" id="p-edit-natal" placeholder="Contoh: 2018">
+      </div>
+      
+      <label>TMT RSPON</label>
+      <input type="date" id="p-edit-tmt-rspon">
+      <label>TMT 7A</label>
+      <input type="date" id="p-edit-tmt-7a">
+
+      <label>Password Baru (Password Default Wajib diganti)</label>
       <input type="password" id="p-edit-pw" placeholder="Ketik password baru Anda">
       <button class="btn btn-primary" onclick="updateProfil()">Simpan Perubahan</button>
     </div>
@@ -519,26 +545,49 @@ async function doLogout() {
 async function updateProfil() {
   const hp = document.getElementById('p-edit-hp').value;
   const email = document.getElementById('p-edit-email').value;
+  const agama = document.getElementById('p-edit-agama').value; // <-- Tambahan variabel agama
+  const fitri = document.getElementById('p-edit-fitri').value;
+  const adha = document.getElementById('p-edit-adha').value;
+  const natal = document.getElementById('p-edit-natal').value;
+  const tmt_rspon = document.getElementById('p-edit-tmt-rspon').value;
+  const tmt_7a = document.getElementById('p-edit-tmt-7a').value;
   const pw = document.getElementById('p-edit-pw').value;
   
-  let updates = { no_hp: hp, email: email };
+  let updates = { 
+    no_hp: hp, 
+    email: email,
+    agama: agama, // <-- Memasukkan agama ke database
+    riwayat_idul_fitri: fitri,
+    riwayat_idul_adha: adha,
+    riwayat_natal: natal, // <-- Perbaikan bug: sebelumnya kurang tanda koma di sini
+    tmt_rspon: tmt_rspon || null, 
+    tmt_7a: tmt_7a || null 
+  };
   
-  // Jika kolom password diisi, ikut diupdate ke database
-  if (pw.trim() !== '') {
-    updates.password_hash = pw;
+  if (pw.trim() !== '') updates.password_hash = pw;
+  
+  const { error } = await db.from('perawat').update(updates).eq('id', currentPerawat.id);
+
+  if (error) { toast('Gagal update: ' + error.message, 'error'); }
+  else { 
+    toast('Profil diperbarui', 'success'); 
+    // Update data di memori lokal agar tidak perlu refresh
+    currentPerawat.agama = agama;
+    currentPerawat.riwayat_idul_fitri = fitri;
+    currentPerawat.riwayat_idul_adha = adha;
+    currentPerawat.riwayat_natal = natal;
+    loadProfile(); 
   }
+}
   
-  const { error } = await db.from('perawat')
-    .update(updates)
-    .eq('id', currentPerawat.id);
+  if (pw.trim() !== '') updates.password_hash = pw;
+  
+  const { error } = await db.from('perawat').update(updates).eq('id', currentPerawat.id);
 
   if (error) { toast('Gagal update', 'error'); }
   else { 
     toast('Profil diperbarui', 'success'); 
-    currentPerawat.no_hp = hp; 
-    currentPerawat.email = email;
-    document.getElementById('p-edit-pw').value = ''; // Kosongkan input password setelah sukses
-    loadProfile(); // Segarkan tampilan
+    loadProfile(); 
   }
 }
 
@@ -947,16 +996,19 @@ async function bacaSemua() {
   loadNotif(); updateBadge(0);
 }
 
-// ── PROFIL ──
+// Perbarui fungsi loadProfile untuk menampilkan data baru
+// Perbarui fungsi loadProfile untuk menampilkan data baru
 async function loadProfile() {
+  // Isi input dengan data yang ada di database
   document.getElementById('p-nama').textContent = currentPerawat.nama;
-  document.getElementById('p-hp').textContent = currentPerawat.no_hp || '-';
-  document.getElementById('p-admin').textContent = currentPerawat.is_admin ? '🛡 Admin' : 'Perawat';
-
-  // Mengisi form input secara otomatis dengan data saat ini
   document.getElementById('p-edit-hp').value = currentPerawat.no_hp || '';
   document.getElementById('p-edit-email').value = currentPerawat.email || '';
-  document.getElementById('p-edit-pw').value = '';
+  document.getElementById('p-edit-agama').value = currentPerawat.agama || ''; // <-- Menarik agama dari database
+  document.getElementById('p-edit-fitri').value = currentPerawat.riwayat_idul_fitri || '';
+  document.getElementById('p-edit-adha').value = currentPerawat.riwayat_idul_adha || '';
+  document.getElementById('p-edit-natal').value = currentPerawat.riwayat_natal || '';
+  document.getElementById('p-edit-tmt-rspon').value = currentPerawat.tmt_rspon || '';
+  document.getElementById('p-edit-tmt-7a').value = currentPerawat.tmt_7a || '';
 
   const now = new Date();
   const rows = [];
@@ -1082,15 +1134,19 @@ async function loadTierAdmin() {
 }
 
 async function hapusTier(id) {
-  if (!confirm('Hapus status cuti perawat ini?')) return;
+  if (!confirm('Hapus status cuti perawat ini dari database?')) return;
   
+  // Pastikan ID yang dikirim benar-benar ada
+  if (!id) { toast('ID tidak ditemukan', 'error'); return; }
+
   const { error } = await db.from('tier_bulanan').delete().eq('id', id);
   
   if (error) {
     toast('Gagal menghapus: ' + error.message, 'error');
+    console.error('Error Supabase:', error);
   } else {
-    toast('Berhasil dihapus', 'success');
-    loadTierAdmin(); // PENTING: Ini yang membuat tombol X berfungsi dan tabel ter-update
+    toast('Data berhasil dihapus dari database', 'success');
+    loadTierAdmin(); // Refresh tabel
   }
 }
 
