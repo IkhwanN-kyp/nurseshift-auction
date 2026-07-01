@@ -1240,7 +1240,7 @@ async function loadStatus(){
       <div class="info-row">
         <span class="info-label">Status</span>
         <span class="tier-badge ${c.status==='aktif'?'status-aktif':'status-dibatalkan'}">
-          ${c.status==='aktif'?'✓ Aktif':c.status==='dibatalkan_sistem'?'✗ Batal (sistem)'?:'✗ Batal'}
+          ${c.status==='aktif'?'✓ Aktif':c.status==='dibatalkan_sistem'?'✗ Batal (sistem)':'✗ Batal'}
         </span>
       </div>
       ${c.dibatalkan_karena?`<div style="font-size:12px;color:var(--danger);margin-top:6px">${c.dibatalkan_karena}</div>`:''}
