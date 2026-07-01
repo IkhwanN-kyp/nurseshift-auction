@@ -318,15 +318,15 @@
       <div id="tier-list"></div>
     </div>
     <div class="card">
-      <div class="card-title">Update Profil</div>
+      <div class="card-title">Update Profil & Password</div>
       <label>Nomor HP</label>
       <input type="tel" id="p-edit-hp">
       <label>Email</label>
       <input type="email" id="p-edit-email">
+      <label>Password Baru (Kosongkan jika tidak ingin diganti)</label>
+      <input type="password" id="p-edit-pw" placeholder="Ketik password baru Anda">
       <button class="btn btn-primary" onclick="updateProfil()">Simpan Perubahan</button>
     </div>
-    <button class="btn btn-danger" onclick="doLogout()" style="margin-top:8px">Keluar</button>
-  </div>
 
   <div id="tab-admin" class="tab-content" style="display:none">
     <div class="admin-tabs">
@@ -516,13 +516,57 @@ async function doLogout() {
 async function updateProfil() {
   const hp = document.getElementById('p-edit-hp').value;
   const email = document.getElementById('p-edit-email').value;
+  const pw = document.getElementById('p-edit-pw').value;
+  
+  let updates = { no_hp: hp, email: email };
+  
+  // Jika kolom password diisi, ikut diupdate ke database
+  if (pw.trim() !== '') {
+    updates.password_hash = pw;
+  }
   
   const { error } = await db.from('perawat')
-    .update({ no_hp: hp, email: email })
+    .update(updates)
     .eq('id', currentPerawat.id);
 
   if (error) { toast('Gagal update', 'error'); }
-  else { toast('Profil diperbarui', 'success'); }
+  else { 
+    toast('Profil diperbarui', 'success'); 
+    currentPerawat.no_hp = hp; 
+    currentPerawat.email = email;
+    document.getElementById('p-edit-pw').value = ''; // Kosongkan input password setelah sukses
+    loadProfile(); // Segarkan tampilan
+  }
+}
+
+// ── PROFIL ──
+async function loadProfile() {
+  document.getElementById('p-nama').textContent = currentPerawat.nama;
+  document.getElementById('p-hp').textContent = currentPerawat.no_hp || '-';
+  document.getElementById('p-admin').textContent = currentPerawat.is_admin ? '🛡 Admin' : 'Perawat';
+
+  // Mengisi form input secara otomatis dengan data saat ini
+  document.getElementById('p-edit-hp').value = currentPerawat.no_hp || '';
+  document.getElementById('p-edit-email').value = currentPerawat.email || '';
+  document.getElementById('p-edit-pw').value = '';
+
+  const now = new Date();
+  const rows = [];
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const bulan = toDateStr(d.getFullYear(), d.getMonth(), 1);
+    const { data } = await db.from('tier_bulanan').select('tier')
+      .eq('perawat_id', currentPerawat.id).eq('bulan', bulan).single();
+    rows.push({ bulan, tier: data?.tier || 3,
+      label: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) });
+  }
+
+  document.getElementById('tier-list').innerHTML = rows.map(r => `
+    <div class="info-row">
+      <span class="info-label">${r.label}</span>
+      ${tierBadge(r.tier)}
+    </div>
+  `).join('');
 }
 
 // ── INIT ──
@@ -685,7 +729,7 @@ async function renderCal() {
   const grid = document.getElementById('cal-grid');
   document.getElementById('cal-month-label').textContent = monthLabel(calYear, calMonth);
   grid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
-  document.getElementById('cal-grid').style.display = 'block';
+  document.getElementById('cal-grid').style.display = 'grid';
 
   await loadSlotData();
 
@@ -928,31 +972,6 @@ async function bacaSemua() {
   await db.from('notifikasi').update({ is_dibaca: true })
     .eq('perawat_id', currentPerawat.id);
   loadNotif(); updateBadge(0);
-}
-
-// ── PROFIL ──
-async function loadProfile() {
-  document.getElementById('p-nama').textContent = currentPerawat.nama;
-  document.getElementById('p-hp').textContent = currentPerawat.no_hp;
-  document.getElementById('p-admin').textContent = currentPerawat.is_admin ? '🛡 Admin' : 'Perawat';
-
-  const now = new Date();
-  const rows = [];
-  for (let i = 1; i <= 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const bulan = toDateStr(d.getFullYear(), d.getMonth(), 1);
-    const { data } = await db.from('tier_bulanan').select('tier')
-      .eq('perawat_id', currentPerawat.id).eq('bulan', bulan).single();
-    rows.push({ bulan, tier: data?.tier || 3,
-      label: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) });
-  }
-
-  document.getElementById('tier-list').innerHTML = rows.map(r => `
-    <div class="info-row">
-      <span class="info-label">${r.label}</span>
-      ${tierBadge(r.tier)}
-    </div>
-  `).join('');
 }
 
 // ── ADMIN ──
