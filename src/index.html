@@ -226,11 +226,11 @@
   <h1 style="text-align:center">Lelang Cuti Perawat 7A</h1>
   <p style="text-align:center">Masuk dengan Nama Perawat</p>
   <label>Nama Perawat</label>
-  <input type="text" id="login-nama" placeholder="Masukkan nama Anda (Contoh: Tyas)">
+  <input type="text" id="login-nama" placeholder="Masukkan nama Anda (Contoh: Bahlil)">
   <label>Password</label>
   <input type="password" id="login-pw" placeholder="Password (Contoh: Perawat7a)">
   <button class="btn btn-primary" onclick="doLogin()">Masuk</button>
-  <a class="link" onclick="lupaPassword()">Lupa password? Hubungi Admin</a>
+  <a class="link" onclick="lupaPassword()">Lupa password? Hubungi Admin Cuti</a>
 </div>
 </div>
 </div>
@@ -579,18 +579,7 @@ async function updateProfil() {
     loadProfile(); 
   }
 }
-  
-  if (pw.trim() !== '') updates.password_hash = pw;
-  
-  const { error } = await db.from('perawat').update(updates).eq('id', currentPerawat.id);
-
-  if (error) { toast('Gagal update', 'error'); }
-  else { 
-    toast('Profil diperbarui', 'success'); 
-    loadProfile(); 
-  }
-}
-
+ 
 // ── INIT ──
 async function initApp() {
   showScreen('screen-app');
