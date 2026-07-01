@@ -611,12 +611,15 @@ function buildAdminMonthDropdowns(months) {
       const v = e.target.value;
       if (!v) return;
       
+      // T1: buka + 3 hari
       const t1 = addDays(v, 3);
       document.getElementById('a-tenggat1').value = t1;
       
+      // T2: t1 + 3 hari (Sebelumnya menggunakan v+3 lalu +3, sekarang t1 + 3)
       const t2 = addDays(t1, 3);
       document.getElementById('a-tenggat2').value = t2;
       
+      // T3: Hingga akhir bulan
       const d = new Date(v);
       const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0); 
       document.getElementById('a-tenggat3').value = lastDay.toISOString().slice(0, 10);
@@ -1081,9 +1084,17 @@ async function loadTierAdmin() {
   </table></div>`;
 }
 
-async function hapusTier(id) {
-  await db.from('tier_bulanan').delete().eq('id', id);
-  loadTierAdmin();
+async function async function hapusTier(id) {
+  if (!confirm('Hapus status cuti perawat ini?')) return;
+  
+  const { error } = await db.from('tier_bulanan').delete().eq('id', id);
+  
+  if (error) {
+    toast('Gagal menghapus: ' + error.message, 'error');
+  } else {
+    toast('Berhasil dihapus', 'success');
+    loadTierAdmin(); // PENTING: Ini yang membuat tombol X berfungsi dan tabel ter-update
+  }
 }
 
 async function simpanBlokir() {
