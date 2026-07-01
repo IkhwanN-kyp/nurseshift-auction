@@ -1082,8 +1082,16 @@ async function loadTierAdmin() {
 }
 
 async function hapusTier(id) {
-  await db.from('tier_bulanan').delete().eq('id', id);
-  loadTierAdmin();
+  if (!confirm('Hapus status cuti perawat ini?')) return;
+  
+  const { error } = await db.from('tier_bulanan').delete().eq('id', id);
+  
+  if (error) {
+    toast('Gagal menghapus: ' + error.message, 'error');
+  } else {
+    toast('Berhasil dihapus', 'success');
+    loadTierAdmin(); // PENTING: Ini yang membuat tombol X berfungsi dan tabel ter-update
+  }
 }
 
 async function simpanBlokir() {
